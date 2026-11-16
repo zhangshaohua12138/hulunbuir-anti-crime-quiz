@@ -594,6 +594,22 @@ class ServerTests(unittest.TestCase):
         status,body,_=self.request('/api/admin/questions','POST',{'type':'single','stem':'坏格式','options':['a','b','c','d'],'answers':['A']},admin)
         self.assertEqual(status,400,body)
 
+    def test_admin_integrations_are_masked_and_persisted(self):
+        admin=self.admin()
+        initial=self.ok('/api/admin/integrations',cookie=admin)
+        self.assertNotIn('wechatAppSecret',initial)
+        saved=self.ok('/api/admin/integrations','PUT',{
+            'wechatAppId':'wx1234567890abcdef','wechatAppSecret':'secret-value',
+            'wechatMchId':'1900000109','wechatPayKey':'pay-key','paymentProvider':'wechat_redpack',
+            'wechatCertPath':'/etc/quiz/cert.pem','wechatKeyPath':'/etc/quiz/key.pem','wechatClientIp':'203.0.113.8'},admin)
+        self.assertEqual(saved['wechatAppId'],'wx1234567890abcdef')
+        self.assertTrue(saved['hasWechatAppSecret']); self.assertTrue(saved['hasWechatPayKey'])
+        self.assertNotIn('wechatAppSecret',saved); self.assertNotIn('wechatPayKey',saved)
+        kept=self.ok('/api/admin/integrations','PUT',{'wechatAppSecret':'','wechatPayKey':''},admin)
+        self.assertTrue(kept['hasWechatAppSecret']); self.assertTrue(kept['hasWechatPayKey'])
+        status,body,_=self.request('/api/admin/integrations','PUT',{'wechatAppId':'bad'},admin)
+        self.assertEqual(status,400,body)
+
     def test_admin_prize_inventory_and_draw_records(self):
         self.prize(stock=10)
         user=self.login(); attempt=self.start(user); self.submit(user,attempt)

@@ -40,6 +40,26 @@ def one(c,q,args=()):
 def allrows(c,q,args=()): return [dict(r) for r in c.execute(q,args)]
 def config(c): return json.loads(c.execute('SELECT value FROM settings WHERE key="config"').fetchone()[0])
 def saveconfig(c,x): c.execute('UPDATE settings SET value=? WHERE key="config"',(dumps(x),))
+
+INTEGRATION_ENV={
+ 'wechatAppId':'WECHAT_APP_ID','wechatAppSecret':'WECHAT_APP_SECRET','wechatMchId':'WECHAT_MCH_ID',
+ 'wechatPayKey':'WECHAT_PAY_KEY','wechatCertPath':'WECHAT_CERT_PATH','wechatKeyPath':'WECHAT_KEY_PATH',
+ 'wechatClientIp':'WECHAT_CLIENT_IP','paymentProvider':'PAYMENT_PROVIDER','wechatSendName':'WECHAT_SEND_NAME',
+ 'wechatWishing':'WECHAT_WISHING','wechatActName':'WECHAT_ACT_NAME'}
+INTEGRATION_DEFAULTS={'wechatAppId':'','wechatAppSecret':'','wechatMchId':'','wechatPayKey':'','wechatCertPath':'','wechatKeyPath':'','wechatClientIp':'','paymentProvider':'demo','wechatSendName':'活动主办方','wechatWishing':'感谢参与平安建设','wechatActName':'扫黑除恶知识答题'}
+def integrations(c):
+    row=one(c,'SELECT value FROM settings WHERE key="integrations"')
+    stored=json.loads(row['value']) if row else {}
+    out=dict(INTEGRATION_DEFAULTS)
+    for k,env in INTEGRATION_ENV.items():
+        if stored.get(k): out[k]=stored[k]
+        elif os.getenv(env): out[k]=os.getenv(env)
+    return out
+def save_integrations(c,x):
+    c.execute('INSERT INTO settings(key,value) VALUES("integrations",?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',(dumps(x),))
+def public_integrations(c):
+    i=integrations(c)
+    return dict(wechatAppId=i['wechatAppId'],hasWechatAppSecret=bool(i['wechatAppSecret']),wechatMchId=i['wechatMchId'],hasWechatPayKey=bool(i['wechatPayKey']),wechatCertPath=i['wechatCertPath'],wechatKeyPath=i['wechatKeyPath'],wechatClientIp=i['wechatClientIp'],paymentProvider=i['paymentProvider'],wechatSendName=i['wechatSendName'],wechatWishing=i['wechatWishing'],wechatActName=i['wechatActName'],callbackUrl=os.getenv('PUBLIC_URL','').rstrip('/')+'/api/auth/callback')
 def state(cfg):
     if now()>=epoch(cfg['endAt']): return 'ended'
     if now()<epoch(cfg['startAt']): return 'pending'
@@ -170,27 +190,38 @@ def validate_question(q):
     return dict(id=q.get('id') or uid(),type=q['type'],stem=q['stem'].strip(),options=opts,answers=answers,explanation=str(q.get('explanation','')),enabled=bool(q.get('enabled',True)))
 
 def readiness(c,cfg):
-    checks=[dict(name=f'{k} 主办方参数确认',ok=bool(v),detail='待主办方确认并配置' if not v else '已确认') for k,v in cfg['confirmations'].items()]
-    payment_envs=([('微信商户号','WECHAT_MCH_ID'),('微信支付密钥','WECHAT_PAY_KEY'),('商户证书','WECHAT_CERT_PATH'),('商户私钥','WECHAT_KEY_PATH'),('服务器出口IP','WECHAT_CLIENT_IP')] if os.getenv('PAYMENT_PROVIDER')=='wechat_redpack' else [('支付网关','PAYMENT_GATEWAY_URL'),('支付网关密钥','PAYMENT_GATEWAY_SECRET')])
-    for name,env in [('公众号凭据','WECHAT_APP_ID'),('公众号密钥','WECHAT_APP_SECRET'),('公网地址','PUBLIC_URL'),('管理员密码','ADMIN_PASSWORD')]+payment_envs:
-        checks.append(dict(name=name,ok=bool(os.getenv(env)),detail=f'环境变量 {env}'))
+    checks=[]
+    i=integrations(c)
+    checks.append(dict(name='公众号 AppID',ok=bool(i['wechatAppId']),detail='后台微信配置或 WECHAT_APP_ID'))
+    checks.append(dict(name='公众号 AppSecret',ok=bool(i['wechatAppSecret']),detail='后台微信配置或 WECHAT_APP_SECRET'))
+    checks.append(dict(name='公网地址',ok=bool(os.getenv('PUBLIC_URL')),detail='环境变量 PUBLIC_URL'))
+    checks.append(dict(name='管理员密码',ok=bool(os.getenv('ADMIN_PASSWORD')),detail='环境变量 ADMIN_PASSWORD'))
+    if i['paymentProvider']=='wechat_redpack':
+        for name,key in [('微信商户号','wechatMchId'),('微信支付密钥','wechatPayKey'),('商户证书','wechatCertPath'),('商户私钥','wechatKeyPath'),('服务器出口IP','wechatClientIp')]:
+            checks.append(dict(name=name,ok=bool(i[key]),detail='后台微信配置或环境变量'))
+    else:
+        for name,env in [('支付网关','PAYMENT_GATEWAY_URL'),('支付网关密钥','PAYMENT_GATEWAY_SECRET')]:
+            checks.append(dict(name=name,ok=bool(os.getenv(env)),detail=f'环境变量 {env}'))
     demo=c.execute("SELECT COUNT(*) FROM questions WHERE stem LIKE '【演示题%' AND enabled=1").fetchone()[0]
     counts={r['type']:r['n'] for r in allrows(c,'SELECT type,COUNT(*) n FROM questions WHERE enabled=1 GROUP BY type')}
-    checks.extend([dict(name='正式题库',ok=not demo and counts.get('single',0)>=5 and counts.get('multiple',0)>=5,detail='移除演示题并导入审核通过的题库'),dict(name='正式发布确认',ok=cfg['productionConfirmed'],detail='后台正式发布开关'),dict(name='活动预算',ok=cfg['budgetCents']>0 and cfg['dailyBudgetCents']>0,detail='以分为单位')])
+    checks.extend([dict(name='正式题库',ok=not demo and counts.get('single',0)>=5 and counts.get('multiple',0)>=5,detail='移除演示题并导入审核通过的题库'),dict(name='活动预算',ok=cfg['budgetCents']>0 and cfg['dailyBudgetCents']>0,detail='以分为单位')])
     return dict(ready=all(x['ok'] for x in checks),checks=checks)
 
 def remote_json(url,data=None,headers=None):
     req=urllib.request.Request(url,data=None if data is None else dumps(data).encode(),headers=headers or {})
     with urllib.request.urlopen(req,timeout=15) as r: return json.load(r)
 WX_CACHE={}
-def wx_token():
+def wx_token(c):
+    i=integrations(c)
+    if not i['wechatAppId'] or not i['wechatAppSecret']: raise Error('公众号 AppID/AppSecret 未配置',503)
+    if WX_CACHE.get('appid')!=i['wechatAppId']: WX_CACHE.clear(); WX_CACHE['appid']=i['wechatAppId']
     if WX_CACHE.get('expires',0)>now(): return WX_CACHE['token']
-    q=urllib.parse.urlencode(dict(grant_type='client_credential',appid=os.getenv('WECHAT_APP_ID',''),secret=os.getenv('WECHAT_APP_SECRET','')))
+    q=urllib.parse.urlencode(dict(grant_type='client_credential',appid=i['wechatAppId'],secret=i['wechatAppSecret']))
     x=remote_json('https://api.weixin.qq.com/cgi-bin/token?'+q)
     if 'access_token' not in x: raise Error('公众号凭据不可用',503)
     WX_CACHE.update(token=x['access_token'],expires=now()+x.get('expires_in',7200)-300); return x['access_token']
-def wx_follow(openid):
-    x=remote_json('https://api.weixin.qq.com/cgi-bin/user/info?'+urllib.parse.urlencode(dict(access_token=wx_token(),openid=openid,lang='zh_CN')))
+def wx_follow(c,openid):
+    x=remote_json('https://api.weixin.qq.com/cgi-bin/user/info?'+urllib.parse.urlencode(dict(access_token=wx_token(c),openid=openid,lang='zh_CN')))
     if 'subscribe' not in x: raise Error('暂时无法验证关注状态',503)
     return bool(x['subscribe'])
 
@@ -199,13 +230,14 @@ def pay_order(order_id):
     with transaction() as c:
         o=one(c,'SELECT * FROM orders WHERE id=?',(order_id,))
         if not o or o['type']!='cash' or o['status'] not in ['pending','retrying']: return
-        if MODE=='demo': c.execute("UPDATE orders SET status='demo_paid',provider_id=? WHERE id=?",('DEMO-'+order_id,order_id)); return
+        i=integrations(c)
+        if MODE=='demo' or i['paymentProvider']=='demo': c.execute("UPDATE orders SET status='demo_paid',provider_id=? WHERE id=?",('DEMO-'+order_id,order_id)); return
         c.execute("UPDATE orders SET status='processing',tries=tries+1 WHERE id=?",(order_id,))
         user=one(c,'SELECT * FROM users WHERE id=?',(o['user_id'],))
     try:
-        if os.getenv('PAYMENT_PROVIDER')=='wechat_redpack':
+        if i['paymentProvider']=='wechat_redpack':
             from wechat_pay import transfer
-            response=transfer(o,user)
+            response=transfer(o,user,i)
             with transaction() as c:
                 c.execute('UPDATE orders SET status=?,provider_id=?,failure=\'\' WHERE id=?',('paid' if response['status']=='paid' else 'sent',response['transactionId'],order_id))
             return
@@ -223,12 +255,14 @@ def pay_order(order_id):
             c.execute('UPDATE orders SET status=?,failure=? WHERE id=?',('held' if current['tries']>=4 else 'retrying',str(e)[:200],order_id))
 
 def reconcile_sent():
-    if os.getenv('PAYMENT_PROVIDER')!='wechat_redpack': return
+    with transaction() as c:
+        i=integrations(c)
+        if i['paymentProvider']!='wechat_redpack': return
+        orders=allrows(c,"SELECT id,created FROM orders WHERE type='cash' AND status='sent' LIMIT 100")
     from wechat_pay import request_xml, billno
-    with transaction() as c: orders=allrows(c,"SELECT id,created FROM orders WHERE type='cash' AND status='sent' LIMIT 100")
     for order in orders:
         try:
-            result=request_xml('/mmpaymkttransfers/gethbinfo',dict(mch_id=os.environ['WECHAT_MCH_ID'],mch_billno=billno(order['id'],order['created']),appid=os.environ['WECHAT_APP_ID'],bill_type='MCHT'))
+            result=request_xml('/mmpaymkttransfers/gethbinfo',dict(mch_id=i['wechatMchId'],mch_billno=billno(order['id'],order['created'],i['wechatMchId']),appid=i['wechatAppId'],bill_type='MCHT'),i)
             status=result.get('status')
             if result.get('result_code')=='SUCCESS' and status in ['RECEIVED','REFUND','FAILED']:
                 with transaction() as c:
@@ -329,18 +363,20 @@ class Handler(BaseHTTPRequestHandler):
             is_test=1 if test_account_name() and name==test_account_name() else 0
             c.execute('INSERT INTO users(id,openid,nickname,followed,created,is_test) VALUES(?,?,?,1,?,?)',(u['id'],u['openid'],name,now(),is_test)); self.login(c,u['id']); return {'ok':True}
         if path=='/api/auth/wechat':
-            if not os.getenv('WECHAT_APP_ID') or not os.getenv('PUBLIC_URL'): raise Error('请先配置微信公众号',503)
+            i=integrations(c)
+            if not i['wechatAppId'] or not os.getenv('PUBLIC_URL'): raise Error('请先配置微信公众号',503)
             nonce=uid(); c.execute('INSERT INTO oauth_states VALUES(?,?)',(nonce,now()+600))
             callback=os.environ['PUBLIC_URL'].rstrip('/')+'/api/auth/callback'
-            url='https://open.weixin.qq.com/connect/oauth2/authorize?'+urllib.parse.urlencode(dict(appid=os.environ['WECHAT_APP_ID'],redirect_uri=callback,response_type='code',scope='snsapi_base',state=nonce))+'#wechat_redirect'
+            url='https://open.weixin.qq.com/connect/oauth2/authorize?'+urllib.parse.urlencode(dict(appid=i['wechatAppId'],redirect_uri=callback,response_type='code',scope='snsapi_base',state=nonce))+'#wechat_redirect'
             return ('',302,'text/plain',{'Location':url,'Set-Cookie':'oauth_state='+nonce+'; HttpOnly; SameSite=Lax; Path=/; Max-Age=600'+('; Secure' if MODE=='production' else '')})
         if path=='/api/auth/callback':
             nonce=query.get('state',[''])[0]; ck=SimpleCookie(); ck.load(self.headers.get('Cookie',''))
             if not ck.get('oauth_state') or not hmac.compare_digest(ck['oauth_state'].value,nonce) or not one(c,'SELECT * FROM oauth_states WHERE state=? AND expires>?',(nonce,now())): raise Error('授权状态已失效',403)
             c.execute('DELETE FROM oauth_states WHERE state=?',(nonce,))
-            x=remote_json('https://api.weixin.qq.com/sns/oauth2/access_token?'+urllib.parse.urlencode(dict(appid=os.environ['WECHAT_APP_ID'],secret=os.environ['WECHAT_APP_SECRET'],code=query.get('code',[''])[0],grant_type='authorization_code')))
+            i=integrations(c)
+            x=remote_json('https://api.weixin.qq.com/sns/oauth2/access_token?'+urllib.parse.urlencode(dict(appid=i['wechatAppId'],secret=i['wechatAppSecret'],code=query.get('code',[''])[0],grant_type='authorization_code')))
             if not x.get('openid'): raise Error('微信授权失败，请重试',401)
-            followed=wx_follow(x['openid']); u=one(c,'SELECT * FROM users WHERE openid=?',(x['openid'],))
+            followed=wx_follow(c,x['openid']); u=one(c,'SELECT * FROM users WHERE openid=?',(x['openid'],))
             if not u:
                 u={'id':uid()}; c.execute('INSERT INTO users(id,openid,nickname,followed,created) VALUES(?,?,?,?,?)',(u['id'],x['openid'],'参与者',int(followed),now()))
             else: c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id']))
@@ -374,7 +410,7 @@ class Handler(BaseHTTPRequestHandler):
             if MODE!='demo': raise Error('演示接口关闭',404)
             c.execute('UPDATE users SET followed=1 WHERE id=?',(u['id'],)); return {'ok':True}
         if path=='/api/follow/refresh' and method=='POST':
-            followed=wx_follow(u['openid']); c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id'])); return {'followed':followed}
+            followed=wx_follow(c,u['openid']); c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id'])); return {'followed':followed}
         if path=='/api/attempts/start' and method=='POST':
             self.require_active(c,cfg,u)
             existing=one(c,"SELECT * FROM attempts WHERE user_id=? AND status='active'",(u['id'],))
@@ -434,10 +470,10 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/share/config':
             url=query.get('url',[''])[0].split('#')[0]
             if not url.startswith(os.getenv('PUBLIC_URL','https://invalid')+'/'): raise Error('分享地址无效')
-            ticket=remote_json('https://api.weixin.qq.com/cgi-bin/ticket/getticket?'+urllib.parse.urlencode(dict(access_token=wx_token(),type='jsapi'))).get('ticket')
+            ticket=remote_json('https://api.weixin.qq.com/cgi-bin/ticket/getticket?'+urllib.parse.urlencode(dict(access_token=wx_token(c),type='jsapi'))).get('ticket')
             if not ticket: raise Error('获取微信分享配置失败',503)
             nonce=uid(); stamp=int(now()); signature=hashlib.sha1(f'jsapi_ticket={ticket}&noncestr={nonce}&timestamp={stamp}&url={url}'.encode()).hexdigest()
-            return dict(appId=os.getenv('WECHAT_APP_ID'),timestamp=stamp,nonceStr=nonce,signature=signature)
+            return dict(appId=integrations(c)['wechatAppId'],timestamp=stamp,nonceStr=nonce,signature=signature)
         raise Error('接口不存在',404)
 
     def orders(self,c,user_id):
@@ -487,6 +523,32 @@ class Handler(BaseHTTPRequestHandler):
             counts={r['type']:r['n'] for r in allrows(c,'SELECT type,COUNT(*) n FROM questions WHERE enabled=1 GROUP BY type')}
             return dict(mode=MODE,stats=dict(users=c.execute('SELECT COUNT(*) FROM users').fetchone()[0],attempts=c.execute("SELECT COUNT(*) FROM attempts WHERE status='submitted'").fetchone()[0],passed=c.execute('SELECT COUNT(*) FROM attempts WHERE passed=1').fetchone()[0],orders=c.execute('SELECT COUNT(*) FROM orders').fetchone()[0],spentCents=c.execute('SELECT COALESCE(SUM(amountCents),0) FROM orders').fetchone()[0]),warnings=[f'{"单选" if t=="single" else "多选"}题可用数量{counts.get(t,0)}，建议补充' for t in ['single','multiple'] if counts.get(t,0)<50],pendingConfirmations=[k for k,v in cfg['confirmations'].items() if not v])
         if path=='/api/admin/readiness': return readiness(c,cfg)
+        if path=='/api/admin/integrations':
+            if method=='GET': return public_integrations(c)
+            if method!='PUT': raise Error('不支持的方法',405)
+            allowed=set(INTEGRATION_DEFAULTS)
+            unknown=set(data)-allowed
+            if unknown: raise Error('未知配置字段：'+','.join(sorted(unknown)))
+            current=integrations(c)
+            updated={**current}
+            for k in allowed:
+                if k not in data: continue
+                val=data[k]
+                if k in ['wechatAppSecret','wechatPayKey']:
+                    if val in ('',None): continue
+                if not isinstance(val,str): raise Error(k+'须为文本')
+                updated[k]=val.strip()
+            if updated['paymentProvider'] not in ['demo','wechat_redpack','gateway']: raise Error('支付模式无效')
+            if updated['wechatAppId'] and not re.fullmatch(r'wx[0-9A-Za-z]{16}',updated['wechatAppId']): raise Error('AppID 格式不正确')
+            if updated['wechatMchId'] and not re.fullmatch(r'[0-9]{6,32}',updated['wechatMchId']): raise Error('商户号格式不正确')
+            for k in ['wechatCertPath','wechatKeyPath']:
+                if updated[k] and not updated[k].startswith('/'): raise Error('证书路径须为服务器绝对路径')
+            if any(len(updated[k])>2000 for k in allowed): raise Error('配置内容过长')
+            save_integrations(c,updated); audit(c,'integrations.update',[k for k in data if k not in ('wechatAppSecret','wechatPayKey')])
+            return public_integrations(c)
+        if path=='/api/admin/integrations/test' and method=='POST':
+            token=wx_token(c)
+            return {'ok':True,'appId':integrations(c)['wechatAppId'],'tokenReady':bool(token)}
         if path=='/api/admin/config':
             if method=='PUT':
                 unknown=set(data)-set(cfg)
