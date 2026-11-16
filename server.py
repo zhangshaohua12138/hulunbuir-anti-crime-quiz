@@ -482,7 +482,7 @@ class Handler(BaseHTTPRequestHandler):
             ticket=remote_json('https://api.weixin.qq.com/cgi-bin/ticket/getticket?'+urllib.parse.urlencode(dict(access_token=wx_token(c),type='jsapi'))).get('ticket')
             if not ticket: raise Error('获取微信分享配置失败',503)
             nonce=uid(); stamp=int(now()); signature=hashlib.sha1(f'jsapi_ticket={ticket}&noncestr={nonce}&timestamp={stamp}&url={url}'.encode()).hexdigest()
-            return dict(appId=integrations(c)['wechatAppId'],timestamp=stamp,nonceStr=nonce,signature=signature,imgUrl=os.getenv('PUBLIC_URL','').rstrip('/')+'/static/share-cover.jpg')
+            return dict(appId=integrations(c)['wechatAppId'],timestamp=stamp,nonceStr=nonce,signature=signature,imgUrl=os.getenv('PUBLIC_URL','').rstrip('/')+'/static/share-cover-v2.jpg')
         raise Error('接口不存在',404)
 
     def orders(self,c,user_id):
