@@ -188,3 +188,10 @@ body {
 
 .user-chip { display:inline-flex; align-items:center; gap:6px; }
 .user-avatar { width:24px; height:24px; border-radius:50%; object-fit:cover; flex:none; }
+
+.user-avatar-fallback { width:24px; height:24px; border-radius:50%; background:#e8f0fb; color:#315b8a; display:grid; place-items:center; flex:none; }
+.user-avatar-fallback svg { width:16px; height:16px; }
+.user-avatar-fallback.large { width:58px; height:58px; }
+.user-avatar-fallback.large svg { width:32px; height:32px; }
+.account-profile { display:flex; align-items:center; gap:12px; margin:8px 0 4px; }
+.account-avatar { width:58px; height:58px; border-radius:50%; object-fit:cover; }
