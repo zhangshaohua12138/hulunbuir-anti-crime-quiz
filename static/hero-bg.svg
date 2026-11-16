@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#04142e"/>
+      <stop offset="0.55" stop-color="#082a55"/>
+      <stop offset="1" stop-color="#A9C2EA"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.72" cy="0.38" r="0.62">
+      <stop offset="0" stop-color="#4d8bd8" stop-opacity=".55"/>
+      <stop offset="0.55" stop-color="#1a4f93" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#04142e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="blade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6f8aa8"/>
+      <stop offset="0.35" stop-color="#e8f2ff"/>
+      <stop offset="0.55" stop-color="#9dc3ec"/>
+      <stop offset="0.8" stop-color="#dcecff"/>
+      <stop offset="1" stop-color="#7d9fc4"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8f6a2e"/>
+      <stop offset="0.45" stop-color="#e3c07a"/>
+      <stop offset="1" stop-color="#a77c35"/>
+    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="blur2" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+
+  <g opacity=".2" stroke="#8db9e8" stroke-width="1">
+    <path d="M0 170h1600M0 310h1600M0 450h1600M0 590h1600M0 730h1600"/>
+    <path d="M170 0v900M410 0v900M650 0v900M890 0v900M1130 0v900M1370 0v900"/>
+  </g>
+
+  <g opacity=".55" filter="url(#soft)">
+    <path d="M120 760 1390 180" stroke="#2b6bb5" stroke-width="90" stroke-linecap="round"/>
+    <path d="M230 790 1450 250" stroke="#A9C2EA" stroke-width="44" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(830 470) rotate(-32)">
+    <path d="M-610 0 330 0 420 -22 330 -44 -610 -26Z" fill="url(#blade)" opacity=".95"/>
+    <path d="M-610 0 330 0" stroke="#ffffff" stroke-opacity=".85" stroke-width="3"/>
+    <path d="M-560 -22 280 -22" stroke="#bfe0ff" stroke-opacity=".6" stroke-width="1.5"/>
+    <path d="M-610 26 330 44" stroke="#0b2c57" stroke-opacity=".8" stroke-width="5"/>
+    <path d="M-720 0 -610 0" stroke="#123b6b" stroke-width="42" stroke-linecap="round"/>
+    <rect x="-760" y="-34" width="92" height="68" rx="10" fill="url(#gold)"/>
+    <path d="M-742 -34v68M-724 -34v68M-706 -34v68" stroke="#6f4d1e" stroke-opacity=".65" stroke-width="3"/>
+    <circle cx="-760" cy="0" r="16" fill="url(#gold)"/>
+  </g>
+
+  <g stroke="#9cc6f2" stroke-linecap="round" opacity=".55">
+    <path d="M180 640 560 470" stroke-width="3"/>
+    <path d="M130 700 500 540" stroke-width="2"/>
+    <path d="M250 180 590 330" stroke-width="2"/>
+    <path d="M300 140 650 280" stroke-width="1.5"/>
+  </g>
+
+  <g fill="#d9e9ff" opacity=".7">
+    <circle cx="320" cy="250" r="3"/><circle cx="470" cy="190" r="2"/><circle cx="1120" cy="170" r="2.5"/>
+    <circle cx="1280" cy="300" r="2"/><circle cx="1390" cy="210" r="3"/><circle cx="1180" cy="650" r="2"/>
+    <circle cx="980" cy="720" r="3"/><circle cx="420" cy="760" r="2"/>
+  </g>
+
+  <g fill="#d9e9ff" opacity=".16">
+    <path d="M0 820h70v-50h45v-34h28v34h55v-72h38v-26h24v26h60v122h52v-64h40v-28h30v28h54v64h70v-40h46v-24h28v24h62v40h74v-58h44v-30h26v30h56v58h70v-30h48v-22h30v22h66v30h90v80H0Z"/>
+  </g>
+</svg>
