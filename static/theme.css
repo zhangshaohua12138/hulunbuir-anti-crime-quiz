@@ -231,3 +231,5 @@ body {
 
 .pager { align-items:center; }
 .pager .help { margin:0; padding:0; height:34px; line-height:34px; align-self:center; }
+
+.test-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff8e9; border:1px solid #efd7a7; color:#7a4c00; border-radius:9px; padding:8px 11px; margin-bottom:10px; font-size:12px; }

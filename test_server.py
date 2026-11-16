@@ -623,6 +623,29 @@ class ServerTests(unittest.TestCase):
         self.assertNotIn('openid',row)
         self.assertEqual(self.request('/api/admin/users',cookie=user)[0],401)
 
+    def test_admin_questions_are_paginated(self):
+        admin=self.admin()
+        first=self.ok('/api/admin/questions',cookie=admin)
+        self.assertEqual(first['page'],1)
+        self.assertLessEqual(len(first['questions']),20)
+        self.assertGreaterEqual(first['total'],1)
+        if first['pages']>1:
+            second=self.ok('/api/admin/questions?page=2',cookie=admin)
+            self.assertEqual(second['page'],2)
+
+    def test_test_account_can_freeze_and_unfreeze_for_acceptance(self):
+        user=self.login('封榜测试')
+        uid=self.ok('/api/bootstrap',cookie=user)['user']['id']
+        admin=self.admin()
+        self.ok('/api/admin/users/'+uid+'/test','POST',{'enabled':True,'password':'jevious'},admin)
+        attempt=self.start(user); self.submit(user,attempt)
+        self.assertEqual(self.request('/api/test/freeze','POST',{},user)[0],200)
+        self.assertTrue(self.ok('/api/bootstrap',cookie=user)['rankingFrozen'])
+        self.assertEqual(self.ok('/api/leaderboard',cookie=user)['frozen'],True)
+        self.assertEqual(self.request('/api/test/unfreeze','POST',{},user)[0],200)
+        self.assertFalse(self.ok('/api/bootstrap',cookie=user)['rankingFrozen'])
+        self.assertEqual(self.sql("SELECT COUNT(*) n FROM ranking")[0]['n'],0)
+
     def test_admin_records_filter_by_user(self):
         users=[self.login('UserA'),self.login('UserB')]
         ids=[]

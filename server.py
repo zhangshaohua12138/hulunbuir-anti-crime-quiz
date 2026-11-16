@@ -119,8 +119,8 @@ def ranking_rows(c):
         previous=key; r['rank']=rank; n=r['nickname'] or '参与者'; r['nickname']=n[0]+'***'+(n[-1] if len(n)>1 else '')
     return rows
 
-def freeze(c,cfg):
-    if state(cfg)!='ended' or one(c,'SELECT key FROM settings WHERE key="frozen"'): return
+def freeze(c,cfg,force=False):
+    if (not force and state(cfg)!='ended') or one(c,'SELECT key FROM settings WHERE key="frozen"'): return
     for r in ranking_rows(c):
         c.execute('INSERT INTO ranking VALUES(?,?,?,?,?)',(r['user_id'],r['rank'],r['nickname'],r['points'],r['totalSeconds']))
         if r['rank']<=cfg['winnerCount']:
@@ -449,6 +449,15 @@ class Handler(BaseHTTPRequestHandler):
             c.execute('UPDATE users SET followed=1 WHERE id=?',(u['id'],)); return {'ok':True}
         if path=='/api/follow/refresh' and method=='POST':
             followed=wx_follow(c,u['openid']); c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id'])); return {'followed':followed}
+        if path=='/api/test/freeze' and method=='POST':
+            if not is_test_user(u): raise Error('仅测试账号可用',403)
+            freeze(c,cfg,force=True); return {'ok':True,'frozen':True}
+        if path=='/api/test/unfreeze' and method=='POST':
+            if not is_test_user(u): raise Error('仅测试账号可用',403)
+            c.execute('DELETE FROM settings WHERE key="frozen"')
+            c.execute('DELETE FROM ranking')
+            c.execute("DELETE FROM orders WHERE source='ranking'")
+            audit(c,'test.unfreeze',{'user':u['id']}); return {'ok':True,'frozen':False}
         if path=='/api/attempts/start' and method=='POST':
             self.require_active(c,cfg,u)
             existing=one(c,"SELECT * FROM attempts WHERE user_id=? AND status='active'",(u['id'],))
@@ -665,7 +674,15 @@ class Handler(BaseHTTPRequestHandler):
         m=re.fullmatch(r'/api/admin/questions(?:/([a-f0-9]+))?',path)
         if m:
             if method=='GET':
-                qs=[json.loads(r['payload']) for r in allrows(c,'SELECT * FROM questions ORDER BY rowid DESC')]; return {'questions':qs,'counts':{typ:sum(q['type']==typ and q['enabled'] for q in qs) for typ in ['single','multiple']}}
+                q=query.get('q',[''])[0].strip()[:80]
+                try: page=max(1,int(query.get('page',['1'])[0]))
+                except Exception: page=1
+                per=20
+                qs=[json.loads(r['payload']) for r in allrows(c,'SELECT * FROM questions ORDER BY rowid DESC')]
+                counts={typ:sum(qq['type']==typ and qq['enabled'] for qq in qs) for typ in ['single','multiple']}
+                if q: qs=[qq for qq in qs if q in qq.get('stem','')]
+                total=len(qs); pages=max(1,(total+per-1)//per); page=min(page,pages)
+                return {'questions':qs[(page-1)*per:page*per],'counts':counts,'total':total,'page':page,'pages':pages}
             q=validate_question({**data,**({'id':m[1]} if m[1] else {})})
             if m[1] and not one(c,'SELECT id FROM questions WHERE id=?',(m[1],)): raise Error('题目不存在',404)
             c.execute('INSERT INTO questions VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET type=excluded.type,stem=excluded.stem,payload=excluded.payload,enabled=excluded.enabled',(q['id'],q['type'],q['stem'],dumps(q),int(q['enabled']))); return q
