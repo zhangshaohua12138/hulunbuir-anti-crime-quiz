@@ -281,6 +281,17 @@ def worker():
         except Exception as e: print('worker:',type(e).__name__,flush=True)
         threading.Event().wait(2)
 
+def is_wechat_request(headers):
+    return 'MicroMessenger' in headers.get('User-Agent','')
+
+def wechat_only_page():
+    return """<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>请在微信中打开</title><style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#eef4fc;color:#17395f;font-family:-apple-system,BlinkMacSystemFont,"Microsoft YaHei",sans-serif;padding:24px}
+    .card{width:min(420px,100%);background:#fff;border:1px solid #d8e5f3;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 16px 40px #1b3b6014}
+    .eyebrow{font-size:12px;color:#5f8bc4;letter-spacing:2px;margin-bottom:8px}h1{font-size:24px;margin:0 0 10px}p{font-size:14px;line-height:1.8;color:#5a7390;margin:0 0 18px}
+    img{width:190px;height:190px;object-fit:contain;border:1px solid #d8e5f3;border-radius:12px;padding:6px;background:#fff}
+    .small{font-size:12px;color:#7b91a8;margin-top:14px}</style></head><body><div class="card"><div class="eyebrow">呼伦贝尔市 · 有奖答题</div><h1>请在微信中打开</h1><p>本活动仅支持微信内参与。<br>请使用微信扫描下方二维码，关注公众号后从菜单进入。</p><img src="/static/follow-qr.jpg" alt="呼伦贝尔政法公众号二维码"><p class="small">长按识别二维码关注“呼伦贝尔政法”</p></div></body></html>"""
+
 class Handler(BaseHTTPRequestHandler):
     server_version='Quiz/1.0'
     def log_message(self,fmt,*args):
@@ -331,7 +342,12 @@ class Handler(BaseHTTPRequestHandler):
             parsed=urllib.parse.urlsplit(self.path); path=parsed.path; query=urllib.parse.parse_qs(parsed.query)
             if not path.startswith('/api/'):
                 if self.command!='GET': raise Error('不支持的方法',405)
-                target=ROOT/'static'/('index.html' if path=='/' else path.removeprefix('/static/').lstrip('/'))
+                if path in ['/','/admin','/admin/'] and path=='/' and not is_wechat_request(self.headers):
+                    return self.respond(wechat_only_page(),ctype='text/html; charset=utf-8')
+                if path in ['/','/admin','/admin/']:
+                    target=ROOT/'static'/'index.html'
+                else:
+                    target=ROOT/'static'/(path.removeprefix('/static/').lstrip('/'))
                 if not target.resolve().is_relative_to((ROOT/'static').resolve()) or not target.is_file(): raise Error('页面不存在',404)
                 import mimetypes
                 return self.respond(target.read_bytes(),ctype=(mimetypes.guess_type(str(target))[0] or 'application/octet-stream')+('; charset=utf-8' if target.suffix in ['.js','.css','.html'] else ''))

@@ -3,7 +3,7 @@
 ## 当前地址
 
 - 活动页：https://demo.jevious.top/
-- 管理后台：https://demo.jevious.top/#admin
+- 管理后台：https://demo.jevious.top/admin
 - 管理员账号：`admin`
 - 管理员密码：部署时通过 `/etc/hulunbuir-quiz.env` 设置，不写入仓库
 - 运行模式：`demo`
@@ -130,3 +130,8 @@ sudo systemctl restart hulunbuir-quiz
 - 后台左侧 **微信配置**：维护公众号 AppID/AppSecret、商户号、商户 API 密钥、证书路径、支付模式和红包文案。
 - 保存后立即生效，不需要重启服务；AppSecret/商户密钥不在页面回显，留空表示不修改。
 - 环境变量仍作为兜底；生产环境建议使用独立密钥管理并限制后台访问。
+
+## 访问限制
+
+- 活动首页 `/` 仅允许微信内置浏览器访问；电脑浏览器打开会显示“请在微信中打开”和公众号二维码。
+- 管理后台单独使用 `/admin`，电脑端可直接访问登录。
