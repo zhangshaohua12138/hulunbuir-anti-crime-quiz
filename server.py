@@ -71,7 +71,7 @@ def init_db():
         c.executescript('''
         PRAGMA journal_mode=WAL;
         CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
-        CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,openid TEXT UNIQUE NOT NULL,nickname TEXT,followed INTEGER DEFAULT 0,rules INTEGER DEFAULT 0,created REAL,blocked INTEGER DEFAULT 0,bonus_points INTEGER DEFAULT 0,is_test INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,openid TEXT UNIQUE NOT NULL,nickname TEXT,avatar TEXT DEFAULT '',followed INTEGER DEFAULT 0,rules INTEGER DEFAULT 0,created REAL,blocked INTEGER DEFAULT 0,bonus_points INTEGER DEFAULT 0,is_test INTEGER DEFAULT 0);
         CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,user_id TEXT,admin INTEGER DEFAULT 0,expires REAL);
         CREATE TABLE IF NOT EXISTS questions(id TEXT PRIMARY KEY,type TEXT,stem TEXT UNIQUE,payload TEXT,enabled INTEGER DEFAULT 1);
         CREATE TABLE IF NOT EXISTS attempts(id TEXT PRIMARY KEY,user_id TEXT REFERENCES users(id),day TEXT,revived INTEGER,status TEXT,created REAL,deadline REAL,expires REAL,submitted REAL,questions TEXT,answers TEXT DEFAULT '{}',score INTEGER,passed INTEGER,points INTEGER DEFAULT 0,seconds INTEGER DEFAULT 0,ip TEXT,policy TEXT);
@@ -85,7 +85,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS oauth_states(state TEXT PRIMARY KEY,expires REAL);
         ''')
         # 旧库平滑升级：SQLite 增加列；新库 CREATE TABLE 已包含。
-        for table,column,ddl in [('users','bonus_points','ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0'),('users','is_test','ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'),('prizes','points','ALTER TABLE prizes ADD COLUMN points INTEGER DEFAULT 0')]:
+        for table,column,ddl in [('users','bonus_points','ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0'),('users','is_test','ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'),('users','avatar',"ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''"),('prizes','points','ALTER TABLE prizes ADD COLUMN points INTEGER DEFAULT 0')]:
             if column not in {r['name'] for r in c.execute(f'PRAGMA table_info({table})')}: c.execute(ddl)
         if not one(c,'SELECT * FROM settings WHERE key="config"'):
             start=datetime.now(TZ).replace(hour=0,minute=0,second=0,microsecond=0)
@@ -290,7 +290,7 @@ class Handler(BaseHTTPRequestHandler):
         body=dumps(data).encode() if ctype.startswith('application/json') else (data.encode() if isinstance(data,str) else data)
         self.send_response(status)
         self.send_header('Content-Type',ctype); self.send_header('Content-Length',str(len(body))); self.send_header('X-Content-Type-Options','nosniff'); self.send_header('Referrer-Policy','same-origin'); self.send_header('Cache-Control','no-store')
-        self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' https://res.wx.qq.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'")
+        self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' https://res.wx.qq.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://thirdwx.qlogo.cn; connect-src 'self'; frame-ancestors 'none'")
         for k,v in (headers or {}).items(): self.send_header(k,v)
         self.end_headers(); self.wfile.write(body)
     def session(self,c):
@@ -367,7 +367,7 @@ class Handler(BaseHTTPRequestHandler):
             if not i['wechatAppId'] or not os.getenv('PUBLIC_URL'): raise Error('请先配置微信公众号',503)
             nonce=uid(); c.execute('INSERT INTO oauth_states VALUES(?,?)',(nonce,now()+600))
             callback=os.environ['PUBLIC_URL'].rstrip('/')+'/api/auth/callback'
-            url='https://open.weixin.qq.com/connect/oauth2/authorize?'+urllib.parse.urlencode(dict(appid=i['wechatAppId'],redirect_uri=callback,response_type='code',scope='snsapi_base',state=nonce))+'#wechat_redirect'
+            url='https://open.weixin.qq.com/connect/oauth2/authorize?'+urllib.parse.urlencode(dict(appid=i['wechatAppId'],redirect_uri=callback,response_type='code',scope='snsapi_userinfo',state=nonce))+'#wechat_redirect'
             return ('',302,'text/plain',{'Location':url,'Set-Cookie':'oauth_state='+nonce+'; HttpOnly; SameSite=Lax; Path=/; Max-Age=600'+('; Secure' if MODE=='production' else '')})
         if path=='/api/auth/callback':
             nonce=query.get('state',[''])[0]; ck=SimpleCookie(); ck.load(self.headers.get('Cookie',''))
@@ -376,10 +376,19 @@ class Handler(BaseHTTPRequestHandler):
             i=integrations(c)
             x=remote_json('https://api.weixin.qq.com/sns/oauth2/access_token?'+urllib.parse.urlencode(dict(appid=i['wechatAppId'],secret=i['wechatAppSecret'],code=query.get('code',[''])[0],grant_type='authorization_code')))
             if not x.get('openid'): raise Error('微信授权失败，请重试',401)
+            profile={}
+            if 'snsapi_userinfo' in str(x.get('scope','')):
+                try:
+                    profile=remote_json('https://api.weixin.qq.com/sns/userinfo?'+urllib.parse.urlencode(dict(access_token=x.get('access_token',''),openid=x['openid'],lang='zh_CN')))
+                except Exception: profile={}
+            if not isinstance(profile,dict): profile={}
             followed=wx_follow(c,x['openid']); u=one(c,'SELECT * FROM users WHERE openid=?',(x['openid'],))
+            nickname=str(profile.get('nickname') or '').strip()[:24]
+            avatar=str(profile.get('headimgurl') or '').replace('http://','https://').strip()[:500]
             if not u:
-                u={'id':uid()}; c.execute('INSERT INTO users(id,openid,nickname,followed,created) VALUES(?,?,?,?,?)',(u['id'],x['openid'],'参与者',int(followed),now()))
-            else: c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id']))
+                u={'id':uid()}; c.execute('INSERT INTO users(id,openid,nickname,avatar,followed,created) VALUES(?,?,?,?,?,?)',(u['id'],x['openid'],nickname or '参与者',avatar,int(followed),now()))
+            else:
+                c.execute('UPDATE users SET nickname=?,avatar=?,followed=? WHERE id=?',(nickname or u.get('nickname') or '参与者',avatar or u.get('avatar') or '',int(followed),u['id']))
             self.login(c,u['id']); return ('',302,'text/plain',{'Location':'/','Set-Cookie':self.cookie})
         if path=='/api/admin/login' and method=='POST':
             key=self.client_address[0]; bucket=LOGIN_LIMIT.setdefault(key,[]); bucket[:]=[t for t in bucket if now()-t<300]
@@ -397,7 +406,7 @@ class Handler(BaseHTTPRequestHandler):
             s=self.session(c); u=one(c,'SELECT * FROM users WHERE id=?',(s['user_id'],)) if s else None
             a=one(c,"SELECT * FROM attempts WHERE user_id=? AND status='active' ORDER BY created DESC LIMIT 1",(u['id'],)) if u else None
             last=one(c,"SELECT * FROM attempts WHERE user_id=? AND status='submitted' ORDER BY submitted DESC LIMIT 1",(u['id'],)) if u else None
-            return dict(mode=MODE,user={k:u[k] for k in ['id','nickname','followed','rules','is_test']} if u else None,config=cfg,state=state(cfg),account=account(c,u,cfg) if u else None,activeAttempt=public_attempt(a,cfg,draw_info(c,a)) if a else None,latestResult=public_attempt(last,cfg,draw_info(c,last)) if last else None,prizes=allrows(c,'SELECT id,name,type,amountCents,points FROM prizes WHERE enabled=1'),orders=self.orders(c,u['id']) if u else [],rankingFrozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')),serverTime=iso(now()))
+            return dict(mode=MODE,user={k:u[k] for k in ['id','nickname','avatar','followed','rules','is_test']} if u else None,config=cfg,state=state(cfg),account=account(c,u,cfg) if u else None,activeAttempt=public_attempt(a,cfg,draw_info(c,a)) if a else None,latestResult=public_attempt(last,cfg,draw_info(c,last)) if last else None,prizes=allrows(c,'SELECT id,name,type,amountCents,points FROM prizes WHERE enabled=1'),orders=self.orders(c,u['id']) if u else [],rankingFrozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')),serverTime=iso(now()))
         if path=='/api/leaderboard':
             frozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')); rows=allrows(c,'SELECT * FROM ranking ORDER BY rank,user_id') if frozen else ranking_rows(c)
             s=self.session(c); me=next((r for r in rows if s and r['user_id']==s['user_id']),None)
