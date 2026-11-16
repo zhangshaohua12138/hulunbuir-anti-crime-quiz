@@ -183,8 +183,14 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.sql('SELECT * FROM attempts'),[])
         self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['freeRemaining'],1)
 
-    def test_demo_test_account_unlimited_and_fixed_score(self):
-        user=self.login('jevious')
+    def test_admin_marks_test_account_with_password(self):
+        user=self.login('测试候选人')
+        boot=self.ok('/api/bootstrap',cookie=user)
+        uid=boot['user']['id']
+        admin=self.admin()
+        self.assertEqual(self.request('/api/admin/users/'+uid+'/test','POST',{'enabled':True,'password':'wrong'},admin)[0],403)
+        marked=self.ok('/api/admin/users/'+uid+'/test','POST',{'enabled':True,'password':'jevious'},admin)
+        self.assertEqual(marked['is_test'],1)
         boot=self.ok('/api/bootstrap',cookie=user)
         self.assertEqual(boot['user']['is_test'],1)
         self.assertGreaterEqual(boot['account']['freeRemaining'],999)
@@ -194,6 +200,8 @@ class ServerTests(unittest.TestCase):
             self.assertEqual((result['score'],result['passed']),(100,True))
         third=self.start(user)
         self.assertTrue(third['id'])
+        self.ok('/api/admin/users/'+uid+'/test','POST',{'enabled':False,'password':'jevious'},admin)
+        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['user']['is_test'],0)
         normal=self.login('普通用户')
         self.assertEqual(self.ok('/api/bootstrap',cookie=normal)['user']['is_test'],0)
 

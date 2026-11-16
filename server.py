@@ -14,7 +14,7 @@ TZ = timezone(timedelta(hours=8))
 LOCK = threading.RLock()
 
 def now(): return time.time()
-def test_account_name(): return os.getenv('TEST_ACCOUNT_NAME', 'jevious' if MODE=='demo' else '')
+def test_mark_password(): return os.getenv('TEST_MARK_PASSWORD', 'jevious')
 def is_test_user(user): return bool(user and user.get('is_test'))
 def iso(t): return datetime.fromtimestamp(t, TZ).isoformat()
 def epoch(s): return datetime.fromisoformat(s.replace('Z','+00:00')).timestamp()
@@ -389,7 +389,7 @@ class Handler(BaseHTTPRequestHandler):
             name=str(data.get('nickname','体验用户')).strip()[:24] or '体验用户'
             # 浏览器会话以随机 openid 标识，昵称绝不作为可冒用的身份凭据。
             u={'id':uid(),'openid':'demo-'+uid()}
-            is_test=1 if test_account_name() and name==test_account_name() else 0
+            is_test=0
             c.execute('INSERT INTO users(id,openid,nickname,followed,created,is_test) VALUES(?,?,?,1,?,?)',(u['id'],u['openid'],name,now(),is_test)); self.login(c,u['id']); return {'ok':True}
         if path=='/api/auth/wechat':
             i=integrations(c)
@@ -577,6 +577,16 @@ class Handler(BaseHTTPRequestHandler):
                 r['createdAt']=iso(r['created']); r.pop('created',None)
                 r['avatar']=r['avatar'] or ''
             return dict(rows=rows,total=total,page=page,pages=pages)
+        m=re.fullmatch(r'/api/admin/users/([a-f0-9]+)/test',path)
+        if m:
+            if method!='POST': raise Error('不支持的方法',405)
+            target=one(c,'SELECT * FROM users WHERE id=?',(m[1],))
+            if not target: raise Error('用户不存在',404)
+            if not hmac.compare_digest(str(data.get('password','')),test_mark_password()): raise Error('测试账号密码错误',403)
+            enabled=bool(data.get('enabled'))
+            c.execute('UPDATE users SET is_test=? WHERE id=?',(int(enabled),target['id']))
+            audit(c,'user.test_toggle',{'user':target['id'],'enabled':enabled})
+            return {'ok':True,'id':target['id'],'is_test':int(enabled)}
         if path=='/api/admin/dashboard':
             counts={r['type']:r['n'] for r in allrows(c,'SELECT type,COUNT(*) n FROM questions WHERE enabled=1 GROUP BY type')}
             return dict(mode=MODE,stats=dict(users=c.execute('SELECT COUNT(*) FROM users').fetchone()[0],attempts=c.execute("SELECT COUNT(*) FROM attempts WHERE status='submitted'").fetchone()[0],passed=c.execute('SELECT COUNT(*) FROM attempts WHERE passed=1').fetchone()[0],orders=c.execute('SELECT COUNT(*) FROM orders').fetchone()[0],spentCents=c.execute('SELECT COALESCE(SUM(amountCents),0) FROM orders').fetchone()[0]),warnings=[f'{"单选" if t=="single" else "多选"}题可用数量{counts.get(t,0)}，建议补充' for t in ['single','multiple'] if counts.get(t,0)<50],pendingConfirmations=[k for k,v in cfg['confirmations'].items() if not v])
