@@ -324,6 +324,12 @@ class Handler(BaseHTTPRequestHandler):
     def require_active(self,c,cfg,u):
         if state(cfg)!='active': raise Error('活动未开始、已结束或已暂停')
         if MODE=='production' and not readiness(c,cfg)['ready']: raise Error('活动正式配置尚未完成',503)
+        # 关注状态不能只信登录时的缓存：每次开始答题/复活/抽奖都向微信实时核对。
+        if not str(u.get('openid','')).startswith('demo-'):
+            followed=wx_follow(c,u['openid'])
+            if bool(followed)!=bool(u['followed']):
+                c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id']))
+                u['followed']=int(followed)
         if not u['followed']: raise Error('请先关注公众号',403)
         if not u['rules']: raise Error('请先阅读并确认活动规则')
     def body(self):
