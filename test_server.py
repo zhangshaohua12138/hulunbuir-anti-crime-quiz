@@ -594,6 +594,16 @@ class ServerTests(unittest.TestCase):
         status,body,_=self.request('/api/admin/questions','POST',{'type':'single','stem':'坏格式','options':['a','b','c','d'],'answers':['A']},admin)
         self.assertEqual(status,400,body)
 
+    def test_wechat_user_must_follow_even_with_cached_flag(self):
+        user=self.login('微信关注测试')
+        # 直接用数据库把该用户改成真实微信 openid，模拟登录时缓存为已关注
+        with server.transaction() as c:
+            row=server.one(c,"SELECT * FROM users WHERE nickname='微信关注测试'")
+            c.execute("UPDATE users SET openid='wx-real-openid',followed=1 WHERE id=?",(row['id'],))
+        with patch.object(server,'wx_follow',return_value=False):
+            status,body,_=self.request('/api/attempts/start','POST',{},user)
+            self.assertEqual(status,403,body)
+
     def test_admin_integrations_are_masked_and_persisted(self):
         admin=self.admin()
         initial=self.ok('/api/admin/integrations',cookie=admin)

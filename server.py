@@ -321,16 +321,23 @@ class Handler(BaseHTTPRequestHandler):
     def admin(self,c):
         s=self.session(c)
         if not s or not s['admin']: raise Error('请先登录管理后台',401)
+    def follow_ok(self,c,u):
+        # 测试账号只用于验收；真实微信用户每次都实时核对，不能只信登录时的缓存。
+        if is_test_user(u): return True
+        openid=str(u.get('openid',''))
+        if openid.startswith('demo-'):
+            # 演示登录只能在非微信环境使用，微信内必须走真实关注校验。
+            return bool(u['followed']) and not is_wechat_request(self.headers)
+        followed=wx_follow(c,openid)
+        if bool(followed)!=bool(u['followed']):
+            c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id']))
+            u['followed']=int(followed)
+        return bool(followed)
+
     def require_active(self,c,cfg,u):
         if state(cfg)!='active': raise Error('活动未开始、已结束或已暂停')
         if MODE=='production' and not readiness(c,cfg)['ready']: raise Error('活动正式配置尚未完成',503)
-        # 关注状态不能只信登录时的缓存：每次开始答题/复活/抽奖都向微信实时核对。
-        if not str(u.get('openid','')).startswith('demo-'):
-            followed=wx_follow(c,u['openid'])
-            if bool(followed)!=bool(u['followed']):
-                c.execute('UPDATE users SET followed=? WHERE id=?',(int(followed),u['id']))
-                u['followed']=int(followed)
-        if not u['followed']: raise Error('请先关注公众号',403)
+        if not self.follow_ok(c,u): raise Error('请先关注公众号',403)
         if not u['rules']: raise Error('请先阅读并确认活动规则')
     def body(self):
         n=int(self.headers.get('Content-Length','0'))
@@ -466,6 +473,8 @@ class Handler(BaseHTTPRequestHandler):
         if m:
             a=one(c,'SELECT * FROM attempts WHERE id=? AND user_id=?',(m[1],u['id']))
             if not a: raise Error('答题记录不存在',404)
+            if a['status']=='active' and method in ['GET','PUT']:
+                self.require_active(c,cfg,u)
             if m[2]=='/answers' and method=='PUT':
                 if a['status']!='active' or now()>a['deadline']: raise Error('本套题已结束')
                 answers=validate_answers(a,data.get('answers',{})); c.execute('UPDATE attempts SET answers=? WHERE id=?',(dumps(answers),a['id'])); a['answers']=dumps(answers)
