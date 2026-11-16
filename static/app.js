@@ -8,6 +8,7 @@ const date = v => v ? new Date(v).toLocaleString('zh-CN', {hour12: false}) : '�
 const shortDate = v => v ? new Date(v).toLocaleDateString('zh-CN', {month:'2-digit',day:'2-digit'}) : '待定';
 const money = v => (Number(v || 0) / 100).toFixed(2);
 const isDemo = () => S.boot?.mode !== 'production';
+function inWeChat() { return /MicroMessenger/i.test(navigator.userAgent); }
 const cfg = () => S.boot?.config || {};
 const statusName = v => ({pending:'未开始',active:'进行中',paused:'暂时暂停',ended:'已结束',submitted:'已交卷',expired:'已过期',payment_returned:'红包已退回，待核实',paid:'已领取 / 已到账',sent:'红包已发送，待领取',demo_paid:'演示模拟发放',held:'挂账待处理',retrying:'重试发放中',simulated:'演示模拟',shipped:'已发货',received:'已签收',returned:'已退回',failed:'发放失败',processing:'处理中',unclaimed:'待登记',claimed:'待发货',pending_payment:'待发放',pending_claim:'待登记',pending_shipment:'待发货',delivered:'已签收',granted:'已发放',ready:'待统一发放'}[v] || v || '待处理');
 const orderStatusName = v => v==='pending'?'待发放':statusName(v);
