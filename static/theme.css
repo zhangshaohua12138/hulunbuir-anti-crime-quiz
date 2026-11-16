@@ -200,3 +200,7 @@ body {
 .admin-user img, .admin-user-fallback { width:28px; height:28px; border-radius:50%; object-fit:cover; flex:none; }
 .admin-user-fallback { display:grid; place-items:center; background:#e8f0fb; color:#315b8a; font-size:13px; font-weight:700; }
 .pager { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:14px; }
+
+.user-record-link { font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+.filter-chip { display:inline-flex; align-items:center; gap:6px; background:#eef5ff; color:#2f5d9a; border:1px solid #cfe0f3; border-radius:999px; padding:5px 9px; font-size:12px; white-space:nowrap; }
+.filter-chip button { border:0; background:transparent; color:#2f5d9a; font-size:16px; line-height:1; cursor:pointer; padding:0 2px; }

@@ -623,6 +623,17 @@ class ServerTests(unittest.TestCase):
         self.assertNotIn('openid',row)
         self.assertEqual(self.request('/api/admin/users',cookie=user)[0],401)
 
+    def test_admin_records_filter_by_user(self):
+        users=[self.login('UserA'),self.login('UserB')]
+        ids=[]
+        for user in users:
+            attempt=self.start(user); self.submit(user,attempt)
+            ids.append(self.ok('/api/bootstrap',cookie=user)['user']['id'])
+        admin=self.admin()
+        rows=self.ok('/api/admin/records?kind=attempts&userId='+ids[0],cookie=admin)['rows']
+        self.assertEqual([r['nickname'] for r in rows],['UserA'])
+        self.assertEqual(self.ok('/api/admin/records?kind=attempts&userId='+ids[1],cookie=admin)['rows'][0]['nickname'],'UserB')
+
     def test_admin_integrations_are_masked_and_persisted(self):
         admin=self.admin()
         initial=self.ok('/api/admin/integrations',cookie=admin)

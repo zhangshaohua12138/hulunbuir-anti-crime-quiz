@@ -689,17 +689,17 @@ class Handler(BaseHTTPRequestHandler):
             if m[1] and not one(c,'SELECT id FROM prizes WHERE id=?',(pid,)): raise Error('奖品不存在',404)
             c.execute('INSERT INTO prizes(id,name,type,amountCents,stock,dailyLimit,weight,enabled,points) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,type=excluded.type,amountCents=excluded.amountCents,stock=excluded.stock,dailyLimit=excluded.dailyLimit,weight=excluded.weight,enabled=excluded.enabled,points=excluded.points',(pid,p['name'],p['type'],p['amountCents'],p['stock'],p['dailyLimit'],p['weight'],int(bool(p['enabled'])),p['points'])); audit(c,'prize.save',{'id':pid}); return {'id':pid,**p}
         if path in ['/api/admin/records','/api/admin/export']:
-            kind=query.get('kind',['attempts'])[0]; search=query.get('q',[''])[0]; date=query.get('date',[''])[0]
+            kind=query.get('kind',['attempts'])[0]; search=query.get('q',[''])[0]; date=query.get('date',[''])[0]; user_id=query.get('userId',[''])[0]
             if kind not in ['attempts','orders','draws']: raise Error('记录类型无效')
             if kind=='draws':
                 rows=allrows(c,'''SELECT d.id,d.created,d.day,d.won,d.message,u.openid,u.nickname,p.name prize_name,p.type prize_type,o.id order_id,o.status order_status
                     FROM draws d JOIN users u ON u.id=d.user_id LEFT JOIN prizes p ON p.id=d.prize_id LEFT JOIN orders o ON o.draw_id=d.id
-                    WHERE (?="" OR d.day=?) ORDER BY d.rowid DESC''',(date,date))
+                    WHERE (?="" OR d.user_id=?) AND (?="" OR d.day=?) ORDER BY d.rowid DESC''',(user_id,user_id,date,date))
                 for r in rows: r['createdAt']=iso(r['created'])
                 if search: rows=[r for r in rows if any(search in str(r.get(k,'')) for k in ['openid','nickname','id','prize_name','message'])]
             else:
                 table='attempts' if kind=='attempts' else 'orders'
-                rows=allrows(c,f'SELECT t.*,u.openid,u.nickname FROM {table} t JOIN users u ON u.id=t.user_id WHERE (?="" OR t.day=?) ORDER BY t.rowid DESC',(date,date))
+                rows=allrows(c,f'SELECT t.*,u.openid,u.nickname FROM {table} t JOIN users u ON u.id=t.user_id WHERE (?="" OR t.user_id=?) AND (?="" OR t.day=?) ORDER BY t.rowid DESC',(user_id,user_id,date,date))
                 if search: rows=[r for r in rows if search in r['openid'] or search in r['id'] or search in r.get('recipient','')]
             for r in rows:
                 for k in ['questions','answers','policy']: r.pop(k,None)
