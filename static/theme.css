@@ -181,3 +181,7 @@ body {
 .admin-columns.single { grid-template-columns: 1fr; }
 
 .test-ribbon { background:#e7f5ec; color:#1f6b45; text-align:center; font-size:12px; padding:7px 16px; line-height:1.5; border-bottom:1px solid #cce7d7; }
+
+.follow-qr { display:flex; flex-direction:column; align-items:center; gap:8px; margin:14px 0 16px; }
+.follow-qr img { width:180px; height:180px; object-fit:contain; background:#fff; border:1px solid var(--line); border-radius:12px; padding:6px; }
+.follow-qr span { font-size:12px; color:var(--muted); }
