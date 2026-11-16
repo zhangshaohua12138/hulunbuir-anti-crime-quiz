@@ -348,15 +348,15 @@ class ServerTests(unittest.TestCase):
         self.assertEqual((result['status'],result['score']),('submitted',80))
         self.assertEqual(self.submit(user,attempt,self.answers(attempt))['score'],80)
 
-    def test_only_passed_attempts_count_for_points_ranking(self):
+    def test_below_pass_scores_join_ranking(self):
         user=self.login()
         first=self.start(user)
-        failed=self.submit(user,first,self.answers(first,1,0))
-        self.assertEqual((failed['score'],failed['passed']),(8,False))
-        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],0)
+        failed=self.submit(user,first,self.answers(first,5,3))
+        self.assertEqual((failed['score'],failed['passed']),(76,False))
+        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],76)
         board=self.ok('/api/leaderboard',cookie=user)
-        self.assertEqual(board['rows'],[])
-        self.assertIsNone(board['me'])
+        self.assertEqual(board['rows'][0]['points'],76)
+        self.assertEqual(board['me']['points'],76)
         self.configure(dailyFree=2)
         second=self.start(user)
         passed=self.submit(user,second,self.answers(second))
@@ -603,6 +603,17 @@ class ServerTests(unittest.TestCase):
         with patch.object(server,'wx_follow',return_value=False):
             status,body,_=self.request('/api/attempts/start','POST',{},user)
             self.assertEqual(status,403,body)
+
+    def test_admin_user_directory_is_read_only(self):
+        user=self.login('UserA')
+        attempt=self.start(user); self.submit(user,attempt)
+        admin=self.admin()
+        data=self.ok('/api/admin/users?q=UserA',cookie=admin)
+        self.assertEqual(data['total'],1)
+        row=data['rows'][0]
+        self.assertEqual((row['nickname'],row['attempts'],row['best']),('UserA',1,100))
+        self.assertNotIn('openid',row)
+        self.assertEqual(self.request('/api/admin/users',cookie=user)[0],401)
 
     def test_admin_integrations_are_masked_and_persisted(self):
         admin=self.admin()

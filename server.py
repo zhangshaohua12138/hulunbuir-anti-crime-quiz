@@ -89,7 +89,7 @@ def init_db():
             if column not in {r['name'] for r in c.execute(f'PRAGMA table_info({table})')}: c.execute(ddl)
         if not one(c,'SELECT * FROM settings WHERE key="config"'):
             start=datetime.now(TZ).replace(hour=0,minute=0,second=0,microsecond=0)
-            cfg=dict(title='呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动',organizer='中共呼伦贝尔市委政法委员会',startAt=start.isoformat(),endAt=(start+timedelta(days=7)).isoformat(),dailyFree=1,reviveLimit=1,passScore=80,timeLimitSeconds=1200,resumeSeconds=1200,showAnswers=False,leaderboardLimit=100,winnerCount=50,shareMode='manual',shareUrl='',followUrl='',awardDescription='积分前50名话费奖励：第1—10名每人300元，第11—30名每人150元，第31—50名每人100元；活动结束后填写手机号，统一发放。',countFailed=False,countRevived=True,dedupDays=1,shuffleOptions=True,dailyWinLimit=1,totalWinLimit=3,budgetCents=100000,dailyBudgetCents=20000,paused=False,confirmations={f'Q-{i:02}':False for i in range(1,14)},productionConfirmed=False)
+            cfg=dict(title='呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动',organizer='中共呼伦贝尔市委政法委员会',startAt=start.isoformat(),endAt=(start+timedelta(days=7)).isoformat(),dailyFree=1,reviveLimit=1,passScore=80,timeLimitSeconds=1200,resumeSeconds=1200,showAnswers=False,leaderboardLimit=100,winnerCount=50,shareMode='manual',shareUrl='',followUrl='',awardDescription='积分前50名话费奖励：第1—10名每人300元，第11—30名每人150元，第31—50名每人100元；活动结束后填写手机号，统一发放。',countFailed=True,countRevived=True,dedupDays=1,shuffleOptions=True,dailyWinLimit=1,totalWinLimit=3,budgetCents=100000,dailyBudgetCents=20000,paused=False,confirmations={f'Q-{i:02}':False for i in range(1,14)},productionConfirmed=False)
             c.execute('INSERT INTO settings VALUES("config",?)',(dumps(cfg),))
         if MODE=='demo' and not one(c,'SELECT id FROM questions LIMIT 1'):
             for typ in ['single','multiple']:
@@ -101,13 +101,13 @@ def init_db():
 
 def audit(c,action,detail): c.execute('INSERT INTO audit(created,action,detail) VALUES(?,?,?)',(now(),action,dumps(detail)))
 def ranking_rows(c):
-    rows=allrows(c,'''WITH passed AS (
-        SELECT * FROM attempts WHERE status='submitted' AND passed=1
+    rows=allrows(c,'''WITH submitted AS (
+        SELECT * FROM attempts WHERE status='submitted' AND (passed=1 OR points>0)
     ), best AS (
         SELECT p.*, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY points DESC, seconds ASC, submitted ASC) rn
-        FROM passed p
+        FROM submitted p
     ), agg AS (
-        SELECT user_id, MIN(submitted) firstPass, MAX(submitted) lastAnswer FROM passed GROUP BY user_id
+        SELECT user_id, MIN(submitted) firstPass, MAX(submitted) lastAnswer FROM submitted GROUP BY user_id
     )
     SELECT u.id user_id,u.nickname,COALESCE(u.bonus_points,0)+b.points points,b.seconds totalSeconds,a.firstPass,a.lastAnswer
     FROM users u JOIN best b ON b.user_id=u.id AND b.rn=1 JOIN agg a ON a.user_id=u.id
@@ -130,11 +130,11 @@ def freeze(c,cfg):
 
 def account(c,user,cfg):
     if is_test_user(user):
-        points=c.execute("SELECT COALESCE(MAX(points),0)+COALESCE((SELECT bonus_points FROM users WHERE id=?),0) FROM attempts WHERE user_id=? AND status='submitted' AND passed=1",(user['id'],user['id'])).fetchone()[0]
+        points=c.execute("SELECT COALESCE(MAX(points),0)+COALESCE((SELECT bonus_points FROM users WHERE id=?),0) FROM attempts WHERE user_id=? AND status='submitted'",(user['id'],user['id'])).fetchone()[0]
         return dict(freeRemaining=999,reviveRemaining=999,canRevive=True,points=points)
     records=allrows(c,"SELECT * FROM attempts WHERE user_id=? AND day=? AND status='submitted'",(user['id'],day()))
     grants=c.execute('SELECT COUNT(*) FROM revives WHERE user_id=? AND day=?',(user['id'],day())).fetchone()[0]
-    points=c.execute("SELECT COALESCE(MAX(points),0)+COALESCE((SELECT bonus_points FROM users WHERE id=?),0) FROM attempts WHERE user_id=? AND status='submitted' AND passed=1",(user['id'],user['id'])).fetchone()[0]
+    points=c.execute("SELECT COALESCE(MAX(points),0)+COALESCE((SELECT bonus_points FROM users WHERE id=?),0) FROM attempts WHERE user_id=? AND status='submitted'",(user['id'],user['id'])).fetchone()[0]
     return dict(freeRemaining=max(0,cfg['dailyFree']-sum(not r['revived'] for r in records)),reviveRemaining=max(0,grants-sum(bool(r['revived']) for r in records)),canRevive=grants<cfg['reviveLimit'] and any(not r['passed'] for r in records),points=points)
 
 def draw_info(c,a):
@@ -167,7 +167,7 @@ def submit(c,a,cfg,answers=None,force=False):
     score=sum((8 if q['type']=='single' else 12) for q in qs if set(selected.get(q['id'],[]))==set(q['answers']))
     if is_test_user(one(c,'SELECT * FROM users WHERE id=?',(a['user_id'],))):
         score=100
-    passed=score>=policy['passScore']; points=score if passed and (not a['revived'] or policy['countRevived']) else 0
+    passed=score>=policy['passScore']; points=score if (passed or policy.get('countFailed')) and (not a['revived'] or policy['countRevived']) else 0
     c.execute("UPDATE attempts SET status='submitted',answers=?,submitted=?,score=?,passed=?,points=?,seconds=? WHERE id=?",(dumps(selected),min(now(),a['deadline']),score,int(passed),points,max(0,int(min(now(),a['deadline'])-a['created'])),a['id']))
     return one(c,'SELECT * FROM attempts WHERE id=?',(a['id'],))
 
@@ -559,6 +559,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def admin_route(self,c,cfg,path,query,data):
         method=self.command
+        if path=='/api/admin/users' and method=='GET':
+            q=query.get('q',[''])[0].strip()[:60]
+            try: page=max(1,int(query.get('page',['1'])[0]))
+            except Exception: page=1
+            per=20
+            where='WHERE (?="" OR u.nickname LIKE ?)' if q else ''
+            args=('',f'%{q}%') if q else ()
+            total=c.execute(f'SELECT COUNT(*) FROM users u {where}',args).fetchone()[0]
+            pages=max(1,(total+per-1)//per); page=min(page,pages)
+            rows=allrows(c,f'''SELECT u.id,u.nickname,u.avatar,u.followed,u.is_test,u.blocked,u.created,
+                (SELECT COUNT(*) FROM attempts a WHERE a.user_id=u.id AND a.status='submitted') attempts,
+                (SELECT COALESCE(MAX(a.points),0) FROM attempts a WHERE a.user_id=u.id AND a.status='submitted') best,
+                (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) orders
+                FROM users u {where} ORDER BY u.created DESC LIMIT ? OFFSET ?''',args+(per,(page-1)*per))
+            for r in rows:
+                r['createdAt']=iso(r['created']); r.pop('created',None)
+                r['avatar']=r['avatar'] or ''
+            return dict(rows=rows,total=total,page=page,pages=pages)
         if path=='/api/admin/dashboard':
             counts={r['type']:r['n'] for r in allrows(c,'SELECT type,COUNT(*) n FROM questions WHERE enabled=1 GROUP BY type')}
             return dict(mode=MODE,stats=dict(users=c.execute('SELECT COUNT(*) FROM users').fetchone()[0],attempts=c.execute("SELECT COUNT(*) FROM attempts WHERE status='submitted'").fetchone()[0],passed=c.execute('SELECT COUNT(*) FROM attempts WHERE passed=1').fetchone()[0],orders=c.execute('SELECT COUNT(*) FROM orders').fetchone()[0],spentCents=c.execute('SELECT COALESCE(SUM(amountCents),0) FROM orders').fetchone()[0]),warnings=[f'{"单选" if t=="single" else "多选"}题可用数量{counts.get(t,0)}，建议补充' for t in ['single','multiple'] if counts.get(t,0)<50],pendingConfirmations=[k for k,v in cfg['confirmations'].items() if not v])
