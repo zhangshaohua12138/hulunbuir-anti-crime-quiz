@@ -221,3 +221,13 @@ body {
 .option.selected .option-mark { background:var(--red-dark); border-color:var(--red-dark); }
 .option.selected .option-mark.radio::after, .option.selected .option-mark.checkbox::after { opacity:1; }
 .option.selected .option-letter { background:var(--red-dark); border-color:var(--red-dark); }
+
+/* 分页与记录表对齐 */
+.pager { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:16px; }
+.pager .btn { min-height:34px; display:inline-flex; align-items:center; justify-content:center; }
+.pager .help { display:inline-flex; align-items:center; justify-content:center; min-width:78px; line-height:1; }
+.records-table th, .records-table td { vertical-align: top; }
+.records-table th:last-child, .records-table td:last-child { text-align:center; }
+
+.pager { align-items:center; }
+.pager .help { margin:0; padding:0; height:34px; line-height:34px; align-self:center; }
