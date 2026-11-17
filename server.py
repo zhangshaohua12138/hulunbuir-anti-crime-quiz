@@ -43,10 +43,13 @@ def saveconfig(c,x): c.execute('UPDATE settings SET value=? WHERE key="config"',
 
 INTEGRATION_ENV={
  'wechatAppId':'WECHAT_APP_ID','wechatAppSecret':'WECHAT_APP_SECRET','wechatMchId':'WECHAT_MCH_ID',
- 'wechatPayKey':'WECHAT_PAY_KEY','wechatCertPath':'WECHAT_CERT_PATH','wechatKeyPath':'WECHAT_KEY_PATH',
+ 'wechatPayKey':'WECHAT_PAY_KEY','wechatApiV3Key':'WECHAT_API_V3_KEY','wechatCertPath':'WECHAT_CERT_PATH','wechatKeyPath':'WECHAT_KEY_PATH',
  'wechatClientIp':'WECHAT_CLIENT_IP','paymentProvider':'PAYMENT_PROVIDER','wechatSendName':'WECHAT_SEND_NAME',
- 'wechatWishing':'WECHAT_WISHING','wechatActName':'WECHAT_ACT_NAME'}
-INTEGRATION_DEFAULTS={'wechatAppId':'','wechatAppSecret':'','wechatMchId':'','wechatPayKey':'','wechatCertPath':'','wechatKeyPath':'','wechatClientIp':'','paymentProvider':'demo','wechatSendName':'活动主办方','wechatWishing':'感谢参与平安建设','wechatActName':'扫黑除恶知识答题'}
+ 'wechatWishing':'WECHAT_WISHING','wechatActName':'WECHAT_ACT_NAME','wechatTransferSceneId':'WECHAT_TRANSFER_SCENE_ID',
+ 'wechatTransferSceneInfoType':'WECHAT_TRANSFER_SCENE_INFO_TYPE','wechatTransferSceneInfoContent':'WECHAT_TRANSFER_SCENE_INFO_CONTENT',
+ 'wechatTransferSceneReward':'WECHAT_TRANSFER_SCENE_REWARD','wechatTransferRemark':'WECHAT_TRANSFER_REMARK',
+ 'wechatUserRecvPerception':'WECHAT_USER_RECV_PERCEPTION','wechatUserRecvStyle':'WECHAT_USER_RECV_STYLE'}
+INTEGRATION_DEFAULTS={'wechatAppId':'','wechatAppSecret':'','wechatMchId':'','wechatPayKey':'','wechatApiV3Key':'','wechatCertPath':'','wechatKeyPath':'','wechatClientIp':'','paymentProvider':'demo','wechatSendName':'活动主办方','wechatWishing':'感谢参与平安建设','wechatActName':'扫黑除恶知识答题','wechatTransferSceneId':'1000','wechatTransferSceneInfoType':'活动名称','wechatTransferSceneInfoContent':'呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动','wechatTransferSceneReward':'有奖答题活动奖励','wechatTransferRemark':'有奖答题活动奖励','wechatUserRecvPerception':'活动奖励','wechatUserRecvStyle':'RED_PACKET'}
 def integrations(c):
     row=one(c,'SELECT value FROM settings WHERE key="integrations"')
     stored=json.loads(row['value']) if row else {}
@@ -59,7 +62,7 @@ def save_integrations(c,x):
     c.execute('INSERT INTO settings(key,value) VALUES("integrations",?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',(dumps(x),))
 def public_integrations(c):
     i=integrations(c)
-    return dict(wechatAppId=i['wechatAppId'],hasWechatAppSecret=bool(i['wechatAppSecret']),wechatMchId=i['wechatMchId'],hasWechatPayKey=bool(i['wechatPayKey']),wechatCertPath=i['wechatCertPath'],wechatKeyPath=i['wechatKeyPath'],wechatClientIp=i['wechatClientIp'],paymentProvider=i['paymentProvider'],wechatSendName=i['wechatSendName'],wechatWishing=i['wechatWishing'],wechatActName=i['wechatActName'],callbackUrl=os.getenv('PUBLIC_URL','').rstrip('/')+'/api/auth/callback')
+    return dict(wechatAppId=i['wechatAppId'],hasWechatAppSecret=bool(i['wechatAppSecret']),wechatMchId=i['wechatMchId'],hasWechatPayKey=bool(i['wechatPayKey']),hasWechatApiV3Key=bool(i['wechatApiV3Key']),wechatCertPath=i['wechatCertPath'],wechatKeyPath=i['wechatKeyPath'],wechatClientIp=i['wechatClientIp'],paymentProvider=i['paymentProvider'],wechatSendName=i['wechatSendName'],wechatWishing=i['wechatWishing'],wechatActName=i['wechatActName'],wechatTransferSceneId=i['wechatTransferSceneId'],wechatTransferSceneInfoType=i['wechatTransferSceneInfoType'],wechatTransferSceneInfoContent=i['wechatTransferSceneInfoContent'],wechatTransferSceneReward=i['wechatTransferSceneReward'],wechatTransferRemark=i['wechatTransferRemark'],wechatUserRecvPerception=i['wechatUserRecvPerception'],wechatUserRecvStyle=i['wechatUserRecvStyle'],callbackUrl=os.getenv('PUBLIC_URL','').rstrip('/')+'/api/auth/callback')
 def state(cfg):
     if now()>=epoch(cfg['endAt']): return 'ended'
     if now()<epoch(cfg['startAt']): return 'pending'
@@ -79,13 +82,13 @@ def init_db():
         CREATE TABLE IF NOT EXISTS revives(user_id TEXT,day TEXT,attempt_id TEXT,channel TEXT,created REAL,PRIMARY KEY(user_id,day,attempt_id));
         CREATE TABLE IF NOT EXISTS prizes(id TEXT PRIMARY KEY,name TEXT,type TEXT,amountCents INTEGER,stock INTEGER,dailyLimit INTEGER,weight INTEGER,enabled INTEGER,points INTEGER DEFAULT 0);
         CREATE TABLE IF NOT EXISTS draws(id TEXT PRIMARY KEY,user_id TEXT,attempt_id TEXT UNIQUE,prize_id TEXT,created REAL,day TEXT,won INTEGER,message TEXT);
-        CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY,draw_id TEXT UNIQUE,user_id TEXT,prize_id TEXT,prize_name TEXT,type TEXT,amountCents INTEGER,created REAL,day TEXT,status TEXT,recipient TEXT DEFAULT '{}',tracking TEXT DEFAULT '',failure TEXT DEFAULT '',tries INTEGER DEFAULT 0,provider_id TEXT DEFAULT '',source TEXT DEFAULT 'lottery');
+        CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY,draw_id TEXT UNIQUE,user_id TEXT,prize_id TEXT,prize_name TEXT,type TEXT,amountCents INTEGER,created REAL,day TEXT,status TEXT,recipient TEXT DEFAULT '{}',tracking TEXT DEFAULT '',failure TEXT DEFAULT '',tries INTEGER DEFAULT 0,provider_id TEXT DEFAULT '',package_info TEXT DEFAULT '',transfer_state TEXT DEFAULT '',source TEXT DEFAULT 'lottery');
         CREATE TABLE IF NOT EXISTS ranking(user_id TEXT PRIMARY KEY,rank INTEGER,nickname TEXT,points INTEGER,totalSeconds INTEGER);
         CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY AUTOINCREMENT,created REAL,action TEXT,detail TEXT);
         CREATE TABLE IF NOT EXISTS oauth_states(state TEXT PRIMARY KEY,expires REAL);
         ''')
         # 旧库平滑升级：SQLite 增加列；新库 CREATE TABLE 已包含。
-        for table,column,ddl in [('users','bonus_points','ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0'),('users','is_test','ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'),('users','avatar',"ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''"),('prizes','points','ALTER TABLE prizes ADD COLUMN points INTEGER DEFAULT 0')]:
+        for table,column,ddl in [('users','bonus_points','ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0'),('users','is_test','ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'),('users','avatar',"ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''"),('orders','package_info',"ALTER TABLE orders ADD COLUMN package_info TEXT DEFAULT ''"),('orders','transfer_state',"ALTER TABLE orders ADD COLUMN transfer_state TEXT DEFAULT ''"),('prizes','points','ALTER TABLE prizes ADD COLUMN points INTEGER DEFAULT 0')]:
             if column not in {r['name'] for r in c.execute(f'PRAGMA table_info({table})')}: c.execute(ddl)
         if not one(c,'SELECT * FROM settings WHERE key="config"'):
             start=datetime.now(TZ).replace(hour=0,minute=0,second=0,microsecond=0)
@@ -196,9 +199,14 @@ def readiness(c,cfg):
     checks.append(dict(name='公众号 AppSecret',ok=bool(i['wechatAppSecret']),detail='后台微信配置或 WECHAT_APP_SECRET'))
     checks.append(dict(name='公网地址',ok=bool(os.getenv('PUBLIC_URL')),detail='环境变量 PUBLIC_URL'))
     checks.append(dict(name='管理员密码',ok=bool(os.getenv('ADMIN_PASSWORD')),detail='环境变量 ADMIN_PASSWORD'))
-    if i['paymentProvider']=='wechat_redpack':
-        for name,key in [('微信商户号','wechatMchId'),('微信支付密钥','wechatPayKey'),('商户证书','wechatCertPath'),('商户私钥','wechatKeyPath'),('服务器出口IP','wechatClientIp')]:
+    if i['paymentProvider'] in ['wechat_redpack','wechat_transfer']:
+        for name,key in [('微信商户号','wechatMchId'),('商户证书','wechatCertPath'),('商户私钥','wechatKeyPath'),('服务器出口IP','wechatClientIp')]:
             checks.append(dict(name=name,ok=bool(i[key]),detail='后台微信配置或环境变量'))
+        if i['paymentProvider']=='wechat_transfer':
+            checks.append(dict(name='APIv3密钥',ok=bool(i['wechatApiV3Key']),detail='后台微信配置或环境变量'))
+            checks.append(dict(name='转账场景ID',ok=bool(i['wechatTransferSceneId']),detail='商家转账产品场景，现金营销为1000'))
+        else:
+            checks.append(dict(name='微信支付密钥',ok=bool(i['wechatPayKey']),detail='后台微信配置或环境变量'))
     else:
         for name,env in [('支付网关','PAYMENT_GATEWAY_URL'),('支付网关密钥','PAYMENT_GATEWAY_SECRET')]:
             checks.append(dict(name=name,ok=bool(os.getenv(env)),detail=f'环境变量 {env}'))
@@ -235,6 +243,18 @@ def pay_order(order_id):
         c.execute("UPDATE orders SET status='processing',tries=tries+1 WHERE id=?",(order_id,))
         user=one(c,'SELECT * FROM users WHERE id=?',(o['user_id'],))
     try:
+        if i['paymentProvider']=='wechat_transfer':
+            from wechat_transfer import create_transfer
+            response=create_transfer(o,user,i)
+            state=str(response.get('state') or '')
+            with transaction() as c:
+                if state=='WAIT_USER_CONFIRM':
+                    c.execute("UPDATE orders SET status='wait_confirm',provider_id=?,package_info=?,transfer_state=?,failure='' WHERE id=?",(response.get('out_bill_no') or o['id'],response.get('package_info') or '',state,order_id))
+                elif state=='SUCCESS':
+                    c.execute("UPDATE orders SET status='paid',provider_id=?,package_info='',transfer_state=?,failure='' WHERE id=?",(response.get('out_bill_no') or o['id'],state,order_id))
+                else:
+                    c.execute("UPDATE orders SET status='held',provider_id=?,package_info='',transfer_state=?,failure=? WHERE id=?",(response.get('out_bill_no') or o['id'],state,str(response.get('fail_reason') or response.get('message') or '转账未完成')[:200],order_id))
+            return
         if i['paymentProvider']=='wechat_redpack':
             from wechat_pay import transfer
             response=transfer(o,user,i)
@@ -500,6 +520,20 @@ class Handler(BaseHTTPRequestHandler):
             if cfg['shareMode']=='disabled': raise Error('复活入口暂未开启')
             c.execute('INSERT INTO revives VALUES(?,?,?,?,?)',(u['id'],day(),a['id'],str(data.get('channel','manual'))[:30],now())); return {'ok':True,'account':account(c,u,cfg)}
         if path=='/api/lottery' and method=='POST': return self.lottery(c,cfg,u,data)
+        m=re.fullmatch(r'/api/orders/([a-f0-9]+)/transfer/sync',path)
+        if m and method=='POST':
+            o=one(c,'SELECT * FROM orders WHERE id=? AND user_id=?',(m[1],u['id']))
+            if not o or o['type']!='cash': raise Error('订单不存在',404)
+            i=integrations(c)
+            if i['paymentProvider']!='wechat_transfer': raise Error('当前不是商家转账模式')
+            if o['status'] not in ['wait_confirm','pending','retrying','sent']: raise Error('当前订单无需同步')
+            from wechat_transfer import query_transfer
+            r=query_transfer(o.get('provider_id') or o['id'],i)
+            tx_state=str(r.get('state') or '')
+            status='paid' if tx_state=='SUCCESS' else 'held' if tx_state in ['FAIL','CANCELLED','CANCELING'] else 'wait_confirm'
+            c.execute('UPDATE orders SET status=?,package_info=?,transfer_state=?,failure=? WHERE id=?',(status,(r.get('package_info') or '') if status=='wait_confirm' else '',tx_state,str(r.get('fail_reason') or '')[:200],o['id']))
+            rows=self.orders(c,u['id'])
+            return next((x for x in rows if x['id']==o['id']),{'ok':True})
         if path=='/api/orders': return {'orders':self.orders(c,u['id'])}
         m=re.fullmatch(r'/api/orders/([a-f0-9]+)/claim',path)
         if m and method=='PUT':
@@ -527,7 +561,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def orders(self,c,user_id):
         rows=allrows(c,'SELECT * FROM orders WHERE user_id=? ORDER BY created DESC',(user_id,))
-        for r in rows: r['recipient']=json.loads(r['recipient'])
+        i=integrations(c)
+        for r in rows:
+            r['recipient']=json.loads(r['recipient'])
+            if r.get('type')=='cash':
+                r['mchId']=i['wechatMchId']; r['appId']=i['wechatAppId']; r['packageInfo']=r.get('package_info') or ''
         return rows
     def lottery(self,c,cfg,u,data):
         a=one(c,'SELECT * FROM attempts WHERE id=? AND user_id=?',(data.get('attemptId'),u['id']))
@@ -611,17 +649,22 @@ class Handler(BaseHTTPRequestHandler):
             for k in allowed:
                 if k not in data: continue
                 val=data[k]
-                if k in ['wechatAppSecret','wechatPayKey']:
+                if k in ['wechatAppSecret','wechatPayKey','wechatApiV3Key']:
                     if val in ('',None): continue
                 if not isinstance(val,str): raise Error(k+'须为文本')
                 updated[k]=val.strip()
-            if updated['paymentProvider'] not in ['demo','wechat_redpack','gateway']: raise Error('支付模式无效')
+            if updated['paymentProvider'] not in ['demo','wechat_redpack','wechat_transfer','gateway']: raise Error('支付模式无效')
+            if updated['wechatApiV3Key'] and len(updated['wechatApiV3Key'])!=32: raise Error('APIv3 密钥须为32位')
+            if not updated['wechatTransferSceneId'].isdigit(): raise Error('转账场景ID须为数字')
+            if updated['wechatUserRecvStyle'] not in ['RED_PACKET','CONFIRM_PAGE']: raise Error('收款样式无效')
+            for k in ['wechatTransferSceneInfoType','wechatTransferSceneInfoContent','wechatTransferSceneReward','wechatTransferRemark','wechatUserRecvPerception']:
+                if len(updated[k])>32: raise Error(k+'过长')
             if updated['wechatAppId'] and not re.fullmatch(r'wx[0-9A-Za-z]{16}',updated['wechatAppId']): raise Error('AppID 格式不正确')
             if updated['wechatMchId'] and not re.fullmatch(r'[0-9]{6,32}',updated['wechatMchId']): raise Error('商户号格式不正确')
             for k in ['wechatCertPath','wechatKeyPath']:
                 if updated[k] and not updated[k].startswith('/'): raise Error('证书路径须为服务器绝对路径')
             if any(len(updated[k])>2000 for k in allowed): raise Error('配置内容过长')
-            save_integrations(c,updated); audit(c,'integrations.update',[k for k in data if k not in ('wechatAppSecret','wechatPayKey')])
+            save_integrations(c,updated); audit(c,'integrations.update',[k for k in data if k not in ('wechatAppSecret','wechatPayKey','wechatApiV3Key')])
             return public_integrations(c)
         if path=='/api/admin/integrations/test' and method=='POST':
             token=wx_token(c)
