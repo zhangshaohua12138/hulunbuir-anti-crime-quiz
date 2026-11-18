@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import { useSession } from '../store'
 import type { Attempt } from '../types'
+import ShareReviveOverlay from '../components/ShareReviveOverlay.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,6 +12,10 @@ const session = useSession()
 const attempt = ref<Attempt | null>(null)
 const loading = ref(true)
 const error = ref('')
+const showShare = ref(false)
+const reviveNotice = ref('')
+const canRevive = computed(() => Boolean(session.account?.canRevive))
+const shareMode = computed(() => String(session.boot?.config.shareMode || 'manual'))
 
 onMounted(async () => {
   await session.loadBoot()
@@ -21,7 +26,29 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  await session.loadBoot(true)
 })
+
+async function openRevive() {
+  if (shareMode.value === 'disabled') return
+  if (shareMode.value === 'free') {
+    try {
+      await api('/api/revive', { method: 'POST', body: JSON.stringify({ attemptId: attempt.value?.id, channel: 'free' }) })
+      reviveNotice.value = '复活机会已到账，返回首页开始新一套答题。'
+      await session.loadBoot(true)
+    } catch (reason) {
+      error.value = reason instanceof Error ? reason.message : '领取失败'
+    }
+    return
+  }
+  showShare.value = true
+}
+
+async function onRevived() {
+  showShare.value = false
+  reviveNotice.value = '分享成功，复活机会已到账，返回首页开始新一套答题。'
+  await session.loadBoot(true)
+}
 
 function lottery() {
   if (!attempt.value) return
@@ -47,12 +74,15 @@ function lottery() {
       <p class="help">
         {{ attempt.passed ? '已达到抽奖门槛，可以前往抽奖。' : '学习的每一步都有意义，下一次继续加油。' }}
       </p>
+      <p v-if="reviveNotice" class="notice-bar">{{ reviveNotice }}</p>
       <div class="result-actions">
         <button v-if="attempt.passed && !attempt.drawn" class="btn full" type="button" @click="lottery">去抽奖</button>
+        <button v-else-if="!attempt.passed && canRevive" class="btn full" type="button" @click="openRevive">分享复活，再答一次</button>
         <a class="btn secondary full" href="#/">返回首页</a>
       </div>
     </main>
 
     <div v-else class="loading">{{ loading ? '正在读取成绩…' : (error || '成绩不存在') }}</div>
+    <ShareReviveOverlay v-if="showShare && attempt" :attempt-id="attempt.id" @close="showShare = false" @granted="onRevived" />
   </div>
 </template>

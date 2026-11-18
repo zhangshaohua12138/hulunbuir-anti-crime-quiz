@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { useSession } from '../store'
@@ -13,6 +13,7 @@ interface Order {
   amountCents?: number
   message?: string
   createdAt?: string
+  recipient?: { name?: string; phone?: string; address?: string; pickup?: string }
 }
 
 const router = useRouter()
@@ -20,6 +21,10 @@ const session = useSession()
 const orders = ref<Order[]>([])
 const loading = ref(true)
 const error = ref('')
+const claimOrder = ref<Order | null>(null)
+const claimBusy = ref(false)
+const claimError = ref('')
+const claimForm = reactive({ name: '', phone: '', address: '', pickup: '' })
 
 onMounted(async () => {
   await session.loadBoot()
@@ -41,6 +46,35 @@ const statusName = (status?: string) =>
   ({ pending: '待发放', processing: '发放中', shipped: '已发货', received: '已领取', granted: '已发放', wait_confirm: '待确认收款', paid: '已到账', held: '挂账处理中', failed: '发放失败', returned: '已退回' }[status || ''] || status || '处理中')
 
 const amount = (order: Order) => (order.amountCents ? `${(order.amountCents / 100).toFixed(2)} 元` : '')
+const canClaim = (order: Order) => ['physical', 'souvenir', 'phone'].includes(order.type || '') && ['pending', 'ready', 'returned'].includes(order.status || '')
+
+function openClaim(order: Order) {
+  claimOrder.value = order
+  claimError.value = ''
+  claimForm.name = order.recipient?.name || ''
+  claimForm.phone = order.recipient?.phone || ''
+  claimForm.address = order.recipient?.address || ''
+  claimForm.pickup = order.recipient?.pickup || ''
+}
+
+async function submitClaim() {
+  if (!claimOrder.value || claimBusy.value) return
+  claimBusy.value = true
+  claimError.value = ''
+  try {
+    await api(`/api/orders/${claimOrder.value.id}/claim`, {
+      method: 'PUT',
+      body: JSON.stringify(claimForm),
+    })
+    claimOrder.value = null
+    const result = await api<{ orders: Order[] }>('/api/orders')
+    orders.value = result.orders || []
+  } catch (reason) {
+    claimError.value = reason instanceof Error ? reason.message : '登记失败'
+  } finally {
+    claimBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -58,6 +92,7 @@ const amount = (order: Order) => (order.amountCents ? `${(order.amountCents / 10
         <div>
           <strong>{{ order.prize_name || order.name || '奖品' }}</strong>
           <p class="help">{{ amount(order) || order.message || '' }}</p>
+          <button v-if="canClaim(order)" class="text-link" type="button" @click="openClaim(order)">{{ order.recipient?.phone ? '修改领取信息' : '登记领取信息' }}</button>
         </div>
         <span class="award-status">{{ statusName(order.status) }}</span>
       </div>
@@ -65,5 +100,23 @@ const amount = (order: Order) => (order.amountCents ? `${(order.amountCents / 10
       <div v-if="loading" class="loading">正在读取奖品…</div>
       <p v-if="error" class="form-error">{{ error }}</p>
     </main>
+
+    <div v-if="claimOrder" class="claim-mask" @click.self="claimOrder = null">
+      <form class="claim-panel card" @submit.prevent="submitClaim">
+        <h2>登记领取信息</h2>
+        <p class="help">{{ claimOrder.prize_name || claimOrder.name || '奖品' }}</p>
+        <label v-if="claimOrder.type !== 'phone'">姓名<input v-model="claimForm.name" required maxlength="40" /></label>
+        <label>手机号<input v-model="claimForm.phone" required pattern="1[3-9]\d{9}" maxlength="11" placeholder="11位手机号" /></label>
+        <template v-if="claimOrder.type !== 'phone'">
+          <label>收货地址<input v-model="claimForm.address" maxlength="300" placeholder="地址或自提点" /></label>
+          <label>自提点（可选）<input v-model="claimForm.pickup" maxlength="300" /></label>
+        </template>
+        <p v-if="claimError" class="form-error">{{ claimError }}</p>
+        <div class="claim-actions">
+          <button class="btn secondary" type="button" @click="claimOrder = null">取消</button>
+          <button class="btn" type="submit" :disabled="claimBusy">{{ claimBusy ? '提交中…' : '保存' }}</button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
