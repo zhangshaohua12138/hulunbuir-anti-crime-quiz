@@ -5,6 +5,7 @@ import HomePreview from '../components/HomePreview.vue'
 import { api } from '../api'
 import { useSession } from '../store'
 import { applyTheme } from '../theme'
+import { configureWechatShare } from '../wechat'
 
 const session = useSession()
 const router = useRouter()
@@ -24,6 +25,7 @@ const loggedIn = computed(() => Boolean(session.boot?.user))
 onMounted(async () => {
   await session.loadBoot()
   applyTheme(session.config)
+  void configureWechatShare(session.config)
 })
 
 async function loginDemo() {

@@ -14,6 +14,9 @@ interface Order {
   message?: string
   createdAt?: string
   recipient?: { name?: string; phone?: string; address?: string; pickup?: string }
+  packageInfo?: string
+  mchId?: string
+  appId?: string
 }
 
 const router = useRouter()
@@ -57,6 +60,33 @@ function openClaim(order: Order) {
   claimForm.pickup = order.recipient?.pickup || ''
 }
 
+async function confirmTransfer(order: Order) {
+  if (!order.packageInfo) {
+    error.value = '暂未获取到确认收款凭证'
+    return
+  }
+  const bridge = (window as any).WeixinJSBridge
+  if (!bridge) {
+    error.value = '请在微信中打开后确认收款'
+    return
+  }
+  try {
+    await new Promise<void>((resolve, reject) => {
+      bridge.invoke('requestMerchantTransfer', { mchId: order.mchId, appId: order.appId, package: order.packageInfo }, (res: { err_msg?: string }) => {
+        const msg = res?.err_msg || ''
+        if (msg === 'requestMerchantTransfer:ok') resolve()
+        else reject(new Error(msg === 'requestMerchantTransfer:cancel' ? '已取消收款' : '确认收款失败'))
+      })
+    })
+    await api(`/api/orders/${order.id}/transfer/sync`, { method: 'POST', body: '{}' })
+    error.value = ''
+    const result = await api<{ orders: Order[] }>('/api/orders')
+    orders.value = result.orders || []
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : '确认收款失败'
+  }
+}
+
 async function submitClaim() {
   if (!claimOrder.value || claimBusy.value) return
   claimBusy.value = true
@@ -93,6 +123,7 @@ async function submitClaim() {
           <strong>{{ order.prize_name || order.name || '奖品' }}</strong>
           <p class="help">{{ amount(order) || order.message || '' }}</p>
           <button v-if="canClaim(order)" class="text-link" type="button" @click="openClaim(order)">{{ order.recipient?.phone ? '修改领取信息' : '登记领取信息' }}</button>
+          <button v-if="order.type === 'cash' && order.status === 'wait_confirm' && order.packageInfo" class="text-link" type="button" @click="confirmTransfer(order)">确认收款</button>
         </div>
         <span class="award-status">{{ statusName(order.status) }}</span>
       </div>

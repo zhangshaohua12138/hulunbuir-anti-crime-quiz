@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { api } from '../api'
+import { useSession } from '../store'
+import { configureWechatShare } from '../wechat'
 
 const props = defineProps<{ attemptId: string }>()
+const session = useSession()
 const emit = defineEmits<{ (event: 'close'): void; (event: 'granted'): void }>()
 const status = ref('等待分享后返回…')
 const busy = ref(false)
@@ -12,6 +15,7 @@ let guardPushed = false
 let interval: number | undefined
 
 onMounted(() => {
+  void configureWechatShare(session.config)
   try {
     history.pushState({ shareRevive: true }, '', location.href)
     guardPushed = true
