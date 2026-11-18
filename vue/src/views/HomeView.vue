@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import HomePreview from '../components/HomePreview.vue'
 import { api } from '../api'
 import { useSession } from '../store'
 import { applyTheme } from '../theme'
 
 const session = useSession()
-const router = useRouter()
 const nickname = ref('')
 const loggingIn = ref(false)
 const message = ref('')
@@ -66,8 +64,7 @@ function start() {
         <a href="#rules">规则</a>
         <a href="#ranking">榜单</a>
         <a href="#awards">奖品</a>
-        <a class="admin-link" href="#/designer">布局设计</a>
-      </nav>
+              </nav>
     </header>
 
     <main v-if="boot" class="page">
@@ -85,13 +82,6 @@ function start() {
         </div>
       </section>
 
-      <section class="card dev-card">
-        <div>
-          <strong>Vue 版 MVP</strong>
-          <p class="help">首页由区块 JSON 渲染，可在布局设计器里拖拽排序、显示隐藏、保存布局。</p>
-        </div>
-        <button class="btn secondary" type="button" @click="router.push('/designer')">打开布局设计器</button>
-      </section>
     </main>
 
     <footer class="site-footer">
