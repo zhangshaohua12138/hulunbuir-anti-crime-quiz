@@ -112,7 +112,7 @@ function completeShareRevive(){
   const status=document.querySelector('#share-status');
   if(status) status.textContent='正在领取复活机会…';
   api('/api/revive','POST',{attemptId:S.attempt.id,channel:'share'}).then(async()=>{
-    closeShareRevive(); await refreshBoot(); nav('home'); toast('分享成功，复活机会已到账');
+    closeShareRevive(); await refreshBoot(); location.hash='home'; home(); toast('分享成功，复活机会已到账');
   }).catch(err=>{
     S.shareReviveBusy=false;
     if(status) status.textContent='领取失败：'+err.message;
