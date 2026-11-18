@@ -581,3 +581,28 @@ p { line-height: 1.75; }
 .integration-card .card-foot { margin-top: auto; }
 .integration-card .card-checklist { margin-top: auto; }
 .integration-card .card-head, .integration-card .card-fields { align-items: start; }
+
+/* Records table aligned like user management */
+.records-table { table-layout: fixed; min-width: 1040px; }
+.records-table th, .records-table td { vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.records-table .row-actions { display: flex; flex-wrap: nowrap; gap: 4px; }
+.records-table .row-actions button { white-space: nowrap; }
+.orders-table th:nth-child(1) { width: 13%; }
+.orders-table th:nth-child(2) { width: 12%; }
+.orders-table th:nth-child(3) { width: 9%; }
+.orders-table th:nth-child(4) { width: 8%; }
+.orders-table th:nth-child(5) { width: 12%; }
+.orders-table th:nth-child(6) { width: 22%; }
+.orders-table th:nth-child(7) { width: 14%; }
+.orders-table th:nth-child(8) { width: 10%; }
+.attempts-table th:nth-child(1) { width: 22%; }
+.attempts-table th:nth-child(2) { width: 10%; }
+.attempts-table th:nth-child(3) { width: 12%; }
+.attempts-table th:nth-child(4) { width: 16%; }
+.attempts-table th:nth-child(5) { width: 15%; }
+.attempts-table th:nth-child(6) { width: 25%; }
+.draws-table th:nth-child(1) { width: 20%; }
+.draws-table th:nth-child(2) { width: 20%; }
+.draws-table th:nth-child(3) { width: 10%; }
+.draws-table th:nth-child(4) { width: 32%; }
+.draws-table th:nth-child(5) { width: 18%; }

@@ -136,7 +136,7 @@ function orderActions(row: Record<string, unknown>) {
       </div>
       <div v-if="loading" class="loading">加载记录…</div>
       <div v-else class="table-scroll">
-        <table class="admin-table records-table">
+        <table :class="['admin-table', 'records-table', kind + '-table']">
           <thead><tr><th v-for="column in columns" :key="column.key">{{ column.label }}</th><th v-if="kind === 'orders'">操作</th></tr></thead>
           <tbody>
             <tr v-for="(row, index) in pagedRows" :key="index">
