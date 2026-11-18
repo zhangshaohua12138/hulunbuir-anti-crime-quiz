@@ -1,21 +1,21 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from './views/HomeView.vue'
-import DesignerView from './views/DesignerView.vue'
-import AdminLoginView from './views/AdminLoginView.vue'
-import QuizView from './views/QuizView.vue'
-import ResultView from './views/ResultView.vue'
-import RulesView from './views/RulesView.vue'
-import LotteryView from './views/LotteryView.vue'
-import RankingView from './views/RankingView.vue'
-import AwardsView from './views/AwardsView.vue'
-import AdminDashboard from './views/admin/AdminDashboard.vue'
-import AdminConfig from './views/admin/AdminConfig.vue'
-import AdminQuestions from './views/admin/AdminQuestions.vue'
-import AdminPrizes from './views/admin/AdminPrizes.vue'
-import AdminUsers from './views/admin/AdminUsers.vue'
-import AdminRecords from './views/admin/AdminRecords.vue'
-import AdminAccounts from './views/admin/AdminAccounts.vue'
-import AdminIntegrations from './views/admin/AdminIntegrations.vue'
+const DesignerView = () => import('./views/DesignerView.vue')
+const AdminLoginView = () => import('./views/AdminLoginView.vue')
+const QuizView = () => import('./views/QuizView.vue')
+const ResultView = () => import('./views/ResultView.vue')
+const RulesView = () => import('./views/RulesView.vue')
+const LotteryView = () => import('./views/LotteryView.vue')
+const RankingView = () => import('./views/RankingView.vue')
+const AwardsView = () => import('./views/AwardsView.vue')
+const AdminDashboard = () => import('./views/admin/AdminDashboard.vue')
+const AdminConfig = () => import('./views/admin/AdminConfig.vue')
+const AdminQuestions = () => import('./views/admin/AdminQuestions.vue')
+const AdminPrizes = () => import('./views/admin/AdminPrizes.vue')
+const AdminUsers = () => import('./views/admin/AdminUsers.vue')
+const AdminRecords = () => import('./views/admin/AdminRecords.vue')
+const AdminAccounts = () => import('./views/admin/AdminAccounts.vue')
+const AdminIntegrations = () => import('./views/admin/AdminIntegrations.vue')
 import { useSession } from './store'
 
 const router = createRouter({

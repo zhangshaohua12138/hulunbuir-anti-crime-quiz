@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AdminShell from '../../components/AdminShell.vue'
 import Pagination from '../../components/Pagination.vue'
+import DataTable from '../../components/DataTable.vue'
 import { api } from '../../api'
 
 type Kind = 'orders' | 'attempts' | 'draws'
@@ -158,20 +159,26 @@ function orderActions(row: Record<string, unknown>) {
         <a class="btn small secondary" :href="`/api/admin/export?kind=${kind}`">导出 XLSX</a>
       </div>
       <div v-if="loading" class="loading">加载记录…</div>
-      <div v-else class="table-scroll">
-        <table :class="['admin-table', 'records-table', kind + '-table']">
-          <thead><tr><th v-for="column in columns" :key="column.key">{{ column.label }}</th><th v-if="kind === 'orders'">操作</th></tr></thead>
-          <tbody>
-            <tr v-for="(row, index) in pagedRows" :key="index">
-              <td v-for="column in columns" :key="column.key">{{ display(column.key, row[column.key]) }}</td>
-              <td v-if="kind === 'orders'" class="row-actions">
-                <button v-for="action in orderActions(row)" :key="action.status" type="button" @click="updateOrder(row, action.status)">{{ action.label }}</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-if="!rows.length" class="empty-canvas">暂无记录</p>
-      </div>
+      <DataTable
+        v-else-if="kind === 'orders'"
+        :columns="columns"
+        :rows="pagedRows"
+        :format="display"
+        table-class="records-table orders-table"
+        empty-text="暂无记录"
+      >
+        <template #actions="{ row }">
+          <button v-for="action in orderActions(row)" :key="action.status" type="button" @click="updateOrder(row, action.status)">{{ action.label }}</button>
+        </template>
+      </DataTable>
+      <DataTable
+        v-else
+        :columns="columns"
+        :rows="pagedRows"
+        :format="display"
+        :table-class="`records-table ${kind}-table`"
+        empty-text="暂无记录"
+      />
       <Pagination :page="page" :pages="totalPages" :total="rows.length" :page-size="pageSize" @update:page="page = $event" @update:page-size="pageSize = $event; page = 1" />
     </section>
   </AdminShell>

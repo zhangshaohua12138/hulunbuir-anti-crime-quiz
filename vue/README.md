@@ -70,3 +70,10 @@ src/styles.css          只负责按顺序 import
 ```
 
 `tokens` 和 `base` 由移动端和管理端共享；页面样式分开，避免全局类名互相污染。
+
+## 性能与复用
+
+- 路由按需加载，首屏只加载首页和 Vue vendor
+- 管理端、答题页、抽奖页、设计器分别拆 chunk
+- 通用分页组件 `Pagination.vue`
+- 通用表格组件 `DataTable.vue`，记录页已改用
