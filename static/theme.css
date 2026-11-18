@@ -411,3 +411,21 @@ body { background-image: none !important; }
 .brand-title { color: var(--red-ink); }
 
 .color-control code { font-size:11px; color:var(--muted); background:transparent; padding:0; }
+
+/* 分享复活引导遮罩 */
+.share-mask { position:fixed; inset:0; z-index:9999; display:flex; align-items:flex-end; justify-content:center; padding:100px 22px 34px; background:rgba(4,10,20,.88); color:#fff; }
+.share-guide { width:min(420px,100%); text-align:center; padding:0 8px calc(10px + env(safe-area-inset-bottom)); }
+.share-guide-icon { width:48px; height:48px; margin:0 auto 14px; display:grid; place-items:center; color:#ffd98a; border:1px solid #ffffff33; border-radius:50%; background:#ffffff10; }
+.share-guide-icon svg { width:24px; height:24px; }
+.share-guide .eyebrow { color:#ffd98a; letter-spacing:3px; }
+.share-guide h2 { color:#fff; font-size:26px; line-height:1.45; margin:10px 0 16px; }
+.share-guide p { color:#d8e4f2; line-height:1.8; margin:0 0 8px; }
+.share-guide b { color:#ffd98a; letter-spacing:2px; }
+.share-tip { font-size:13px; color:#a9bed6 !important; }
+.share-status { margin:22px auto 0; padding:10px 14px; border:1px solid #ffffff22; border-radius:10px; color:#cfe0f2; font-size:13px; background:#ffffff0b; }
+.share-close { margin-top:18px; border:0; background:transparent; color:#93a9c1; font-size:12px; text-decoration:underline; cursor:pointer; }
+.share-arrow { position:absolute; top:12px; right:16px; display:flex; flex-direction:column; align-items:center; gap:0; color:#ffd98a; animation:share-bounce 1.4s ease-in-out infinite; }
+.share-dots { font-size:30px; line-height:1; letter-spacing:4px; padding-right:4px; }
+.share-arrow-line { font-size:30px; line-height:1; transform:rotate(-8deg); }
+@keyframes share-bounce { 0%,100% { transform:translate(0,0); } 50% { transform:translate(8px,-4px); } }
+@media (max-width:700px) { .share-mask { padding-top:88px; } .share-guide h2 { font-size:23px; } }
