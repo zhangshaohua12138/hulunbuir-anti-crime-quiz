@@ -23,9 +23,9 @@ const loading = ref(true)
 const message = ref('')
 const editing = ref(false)
 const page = ref(1)
-const pageSize = 20
-const totalPages = computed(() => Math.max(1, Math.ceil(prizes.value.length / pageSize)))
-const pagedPrizes = computed(() => prizes.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+const pageSize = ref(10)
+const totalPages = computed(() => Math.max(1, Math.ceil(prizes.value.length / pageSize.value)))
+const pagedPrizes = computed(() => prizes.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 const form = reactive<Prize>({ name: '', type: 'none', amountCents: 0, stock: 1, dailyLimit: 1, weight: 1, enabled: true, points: 0 })
 
 onMounted(load)
@@ -91,7 +91,7 @@ const amount = (prize: Prize) => (prize.type === 'cash' ? `¥ ${(prize.amountCen
           </tbody>
         </table>
       </div>
-      <Pagination :page="page" :pages="totalPages" :total="prizes.length" @update:page="page = $event" />
+      <Pagination :page="page" :pages="totalPages" :total="prizes.length" :page-size="pageSize" @update:page="page = $event" @update:page-size="pageSize = $event; page = 1" />
     </section>
     <form v-if="editing" class="card admin-form" @submit.prevent="save">
       <h2>{{ form.id ? '编辑奖品' : '新增奖品' }}</h2>

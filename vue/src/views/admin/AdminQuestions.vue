@@ -17,6 +17,7 @@ interface Question {
 const list = ref<Question[]>([])
 const counts = ref<{ single: number; multiple: number }>({ single: 0, multiple: 0 })
 const page = ref(1)
+const pageSize = ref(10)
 const pages = ref(1)
 const total = ref(0)
 const search = ref('')
@@ -61,7 +62,7 @@ async function load() {
   loading.value = true
   try {
     const data = await api<{ questions: Question[]; counts: { single: number; multiple: number }; total: number; page: number; pages: number }>(
-      `/api/admin/questions?page=${page.value}&q=${encodeURIComponent(search.value)}`,
+      `/api/admin/questions?page=${page.value}&pageSize=${pageSize.value}&q=${encodeURIComponent(search.value)}`,
     )
     list.value = data.questions
     counts.value = data.counts
@@ -154,7 +155,7 @@ function answerToggle(id: string) {
         </article>
         <p v-if="!list.length" class="empty-canvas">暂无题目</p>
       </div>
-      <Pagination :page="page" :pages="pages" :total="total" @update:page="page = $event; load()" />
+      <Pagination :page="page" :pages="pages" :total="total" :page-size="pageSize" @update:page="page = $event; load()" @update:page-size="pageSize = $event; page = 1; load()" />
     </section>
 
     <form v-if="editing" class="card admin-form question-form" @submit.prevent="save">

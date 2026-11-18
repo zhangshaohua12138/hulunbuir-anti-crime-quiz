@@ -11,9 +11,9 @@ const message = ref('')
 const search = ref('')
 const date = ref('')
 const page = ref(1)
-const pageSize = 20
-const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize)))
-const pagedRows = computed(() => rows.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+const pageSize = ref(10)
+const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize.value)))
+const pagedRows = computed(() => rows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 
 const columns = computed(() => {
   if (kind.value === 'orders') return ['prize_name', 'status', 'type', 'amountCents', 'nickname', 'recipient', 'createdAt']
@@ -98,7 +98,7 @@ function display(value: unknown) {
         </table>
         <p v-if="!rows.length" class="empty-canvas">暂无记录</p>
       </div>
-      <Pagination :page="page" :pages="totalPages" :total="rows.length" @update:page="page = $event" />
+      <Pagination :page="page" :pages="totalPages" :total="rows.length" :page-size="pageSize" @update:page="page = $event" @update:page-size="pageSize = $event; page = 1" />
     </section>
   </AdminShell>
 </template>

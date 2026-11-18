@@ -21,9 +21,9 @@ const loading = ref(true)
 const error = ref('')
 const winners = route.query.winners === '1'
 const page = ref(1)
-const pageSize = 20
-const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize)))
-const pagedRows = computed(() => rows.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+const pageSize = ref(10)
+const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize.value)))
+const pagedRows = computed(() => rows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 
 onMounted(async () => {
   await session.loadBoot()
@@ -70,7 +70,7 @@ function time(seconds: number) {
         </div>
         <p v-if="!loading && !rows.length" class="empty-canvas">还没有上榜记录。</p>
       </div>
-      <Pagination :page="page" :pages="totalPages" :total="rows.length" @update:page="page = $event" />
+      <Pagination :page="page" :pages="totalPages" :total="rows.length" :page-size="pageSize" @update:page="page = $event" @update:page-size="pageSize = $event; page = 1" />
       <div v-if="loading" class="loading">正在读取榜单…</div>
       <p v-if="error" class="form-error">{{ error }}</p>
     </main>

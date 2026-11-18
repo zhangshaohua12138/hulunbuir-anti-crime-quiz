@@ -18,6 +18,7 @@ interface UserRow {
 
 const users = ref<UserRow[]>([])
 const page = ref(1)
+const pageSize = ref(10)
 const pages = ref(1)
 const total = ref(0)
 const search = ref('')
@@ -29,7 +30,7 @@ onMounted(load)
 async function load() {
   loading.value = true
   try {
-    const data = await api<{ rows: UserRow[]; page: number; pages: number; total: number }>(`/api/admin/users?page=${page.value}&q=${encodeURIComponent(search.value)}`)
+    const data = await api<{ rows: UserRow[]; page: number; pages: number; total: number }>(`/api/admin/users?page=${page.value}&pageSize=${pageSize.value}&q=${encodeURIComponent(search.value)}`)
     users.value = data.rows
     page.value = data.page
     pages.value = data.pages
@@ -84,7 +85,7 @@ async function toggleTest(user: UserRow) {
         </table>
         <p v-if="!users.length" class="empty-canvas">暂无用户</p>
       </div>
-      <Pagination :page="page" :pages="pages" :total="total" @update:page="page = $event; load()" />
+      <Pagination :page="page" :pages="pages" :total="total" :page-size="pageSize" @update:page="page = $event; load()" @update:page-size="pageSize = $event; page = 1; load()" />
     </section>
   </AdminShell>
 </template>

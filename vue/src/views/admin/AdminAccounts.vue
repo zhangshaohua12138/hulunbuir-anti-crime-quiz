@@ -9,9 +9,9 @@ const accounts = ref<Account[]>([])
 const loading = ref(true)
 const message = ref('')
 const page = ref(1)
-const pageSize = 20
-const totalPages = computed(() => Math.max(1, Math.ceil(accounts.value.length / pageSize)))
-const pagedAccounts = computed(() => accounts.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+const pageSize = ref(10)
+const totalPages = computed(() => Math.max(1, Math.ceil(accounts.value.length / pageSize.value)))
+const pagedAccounts = computed(() => accounts.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 const form = reactive({ username: '', password: '', role: 'operator' })
 
 onMounted(load)
@@ -82,7 +82,7 @@ async function toggle(account: Account) {
             </tbody>
           </table>
         </div>
-        <Pagination :page="page" :pages="totalPages" :total="accounts.length" @update:page="page = $event" />
+        <Pagination :page="page" :pages="totalPages" :total="accounts.length" :page-size="pageSize" @update:page="page = $event" @update:page-size="pageSize = $event; page = 1" />
       </section>
       <section class="card">
         <h2>新增账号</h2>

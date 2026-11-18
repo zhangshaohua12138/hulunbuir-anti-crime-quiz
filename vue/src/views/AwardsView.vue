@@ -28,9 +28,9 @@ const error = ref('')
 const claimOrder = ref<Order | null>(null)
 const claimBusy = ref(false)
 const page = ref(1)
-const pageSize = 10
-const totalPages = computed(() => Math.max(1, Math.ceil(orders.value.length / pageSize)))
-const pagedOrders = computed(() => orders.value.slice((page.value - 1) * pageSize, page.value * pageSize))
+const pageSize = ref(10)
+const totalPages = computed(() => Math.max(1, Math.ceil(orders.value.length / pageSize.value)))
+const pagedOrders = computed(() => orders.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 const claimError = ref('')
 const claimForm = reactive({ name: '', phone: '', address: '', pickup: '' })
 
@@ -138,7 +138,7 @@ async function submitClaim() {
       <p v-if="!loading && !orders.length" class="empty-canvas">暂无中奖记录。完成答题并达标后，可参与好礼抽取。</p>
       <div v-if="loading" class="loading">正在读取奖品…</div>
       <p v-if="error" class="form-error">{{ error }}</p>
-      <Pagination :page="page" :pages="totalPages" :total="orders.length" @update:page="page = $event" />
+      <Pagination :page="page" :pages="totalPages" :total="orders.length" :page-size="pageSize" @update:page="page = $event" @update:page-size="pageSize = $event; page = 1" />
     </main>
 
     <div v-if="claimOrder" class="claim-mask" @click.self="claimOrder = null">

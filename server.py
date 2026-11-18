@@ -760,7 +760,9 @@ class Handler(BaseHTTPRequestHandler):
             q=query.get('q',[''])[0].strip()[:60]
             try: page=max(1,int(query.get('page',['1'])[0]))
             except Exception: page=1
-            per=20
+            try: per=int(query.get('pageSize',['20'])[0])
+            except Exception: per=20
+            if per not in [10,20,50]: per=20
             where='WHERE (?="" OR u.nickname LIKE ?)' if q else ''
             args=('',f'%{q}%') if q else ()
             total=c.execute(f'SELECT COUNT(*) FROM users u {where}',args).fetchone()[0]
@@ -965,7 +967,9 @@ class Handler(BaseHTTPRequestHandler):
                 q=query.get('q',[''])[0].strip()[:80]
                 try: page=max(1,int(query.get('page',['1'])[0]))
                 except Exception: page=1
-                per=20
+                try: per=int(query.get('pageSize',['20'])[0])
+                except Exception: per=20
+                if per not in [10,20,50]: per=20
                 qs=[json.loads(r['payload']) for r in allrows(c,'SELECT * FROM questions ORDER BY rowid DESC')]
                 counts={typ:sum(qq['type']==typ and qq['enabled'] for qq in qs) for typ in ['single','multiple']}
                 if q: qs=[qq for qq in qs if q in qq.get('stem','')]
