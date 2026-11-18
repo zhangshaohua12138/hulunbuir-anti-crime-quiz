@@ -120,7 +120,7 @@ async function save() {
           <div class="card-heading"><h2>答题规则</h2><p>机会、分数、时长和榜单人数</p></div>
           <span class="card-state">满分 100</span>
         </header>
-        <div class="card-fields three">
+        <div class="card-fields">
           <label>每日免费次数<input v-model.number="config.dailyFree" type="number" min="1" /></label>
           <label>每日复活上限<input v-model.number="config.reviveLimit" type="number" min="0" /></label>
           <label>抽奖达标分数<input v-model.number="config.passScore" type="number" min="1" max="100" /></label>
@@ -128,6 +128,7 @@ async function save() {
           <label>排行榜展示条数<input v-model.number="config.leaderboardLimit" type="number" min="1" /></label>
           <label>获奖人数<input v-model.number="config.winnerCount" type="number" min="1" /></label>
         </div>
+        <div class="card-foot"><span>单选 5 题 · 多选 5 题</span><span>满分 100 分</span></div>
       </section>
 
       <section class="settings-card budget-card">
