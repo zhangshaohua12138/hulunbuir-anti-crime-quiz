@@ -28,9 +28,9 @@ async function submit() {
 <template>
   <main class="login-page">
     <section class="login-panel">
-      <div class="eyebrow">Vue Layout Studio</div>
-      <h1>布局设计器</h1>
-      <p class="help">使用超级管理员或运营账号登录，配置首页区块顺序和显示状态。</p>
+      <div class="eyebrow">VUE ADMIN</div>
+      <h1>活动管理后台</h1>
+      <p class="help">使用超级管理员或运营账号登录，管理活动、题库、奖品和发奖。</p>
       <form @submit.prevent="submit">
         <label>
           用户名
@@ -42,7 +42,7 @@ async function submit() {
         </label>
         <p v-if="error" class="form-error">{{ error }}</p>
         <button class="btn full" type="submit" :disabled="loading">
-          {{ loading ? '登录中…' : '进入设计器' }}
+          {{ loading ? '登录中…' : '登录管理后台' }}
         </button>
       </form>
       <a class="text-link" href="/">返回活动首页</a>
