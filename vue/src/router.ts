@@ -8,6 +8,14 @@ import RulesView from './views/RulesView.vue'
 import LotteryView from './views/LotteryView.vue'
 import RankingView from './views/RankingView.vue'
 import AwardsView from './views/AwardsView.vue'
+import AdminDashboard from './views/admin/AdminDashboard.vue'
+import AdminConfig from './views/admin/AdminConfig.vue'
+import AdminQuestions from './views/admin/AdminQuestions.vue'
+import AdminPrizes from './views/admin/AdminPrizes.vue'
+import AdminUsers from './views/admin/AdminUsers.vue'
+import AdminRecords from './views/admin/AdminRecords.vue'
+import AdminAccounts from './views/admin/AdminAccounts.vue'
+import AdminIntegrations from './views/admin/AdminIntegrations.vue'
 import { useSession } from './store'
 
 const router = createRouter({
@@ -21,6 +29,14 @@ const router = createRouter({
     { path: '/ranking', component: RankingView },
     { path: '/winners', component: RankingView },
     { path: '/awards', component: AwardsView },
+    { path: '/admin', component: AdminDashboard, meta: { admin: true } },
+    { path: '/admin/config', component: AdminConfig, meta: { admin: true } },
+    { path: '/admin/questions', component: AdminQuestions, meta: { admin: true } },
+    { path: '/admin/prizes', component: AdminPrizes, meta: { admin: true } },
+    { path: '/admin/users', component: AdminUsers, meta: { admin: true } },
+    { path: '/admin/records', component: AdminRecords, meta: { admin: true } },
+    { path: '/admin/accounts', component: AdminAccounts, meta: { admin: true } },
+    { path: '/admin/integrations', component: AdminIntegrations, meta: { admin: true } },
     { path: '/designer', component: DesignerView, meta: { admin: true } },
     { path: '/login', component: AdminLoginView },
   ],

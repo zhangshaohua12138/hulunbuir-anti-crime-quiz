@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSession } from '../store'
 
 const router = useRouter()
+const route = useRoute()
 const session = useSession()
 const username = ref('admin')
 const password = ref('')
@@ -16,7 +17,7 @@ async function submit() {
   error.value = ''
   try {
     await session.login(username.value, password.value)
-    await router.replace('/designer')
+    await router.replace(String(route.query.next || '/admin'))
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : '登录失败'
   } finally {
