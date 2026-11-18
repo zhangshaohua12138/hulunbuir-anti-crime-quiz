@@ -25,7 +25,7 @@ onMounted(async () => {
 
 function lottery() {
   if (!attempt.value) return
-  window.location.href = `/#result/${attempt.value.id}`
+  router.push(`/lottery/${attempt.value.id}`)
 }
 </script>
 

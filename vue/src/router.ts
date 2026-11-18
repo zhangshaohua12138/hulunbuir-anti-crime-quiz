@@ -5,6 +5,9 @@ import AdminLoginView from './views/AdminLoginView.vue'
 import QuizView from './views/QuizView.vue'
 import ResultView from './views/ResultView.vue'
 import RulesView from './views/RulesView.vue'
+import LotteryView from './views/LotteryView.vue'
+import RankingView from './views/RankingView.vue'
+import AwardsView from './views/AwardsView.vue'
 import { useSession } from './store'
 
 const router = createRouter({
@@ -14,6 +17,10 @@ const router = createRouter({
     { path: '/rules', component: RulesView },
     { path: '/quiz/:id', component: QuizView },
     { path: '/result/:id', component: ResultView },
+    { path: '/lottery/:id', component: LotteryView },
+    { path: '/ranking', component: RankingView },
+    { path: '/winners', component: RankingView },
+    { path: '/awards', component: AwardsView },
     { path: '/designer', component: DesignerView, meta: { admin: true } },
     { path: '/login', component: AdminLoginView },
   ],

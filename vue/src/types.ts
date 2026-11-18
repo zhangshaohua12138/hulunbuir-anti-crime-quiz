@@ -106,3 +106,10 @@ export interface Attempt {
   drawn?: boolean
   lottery?: unknown
 }
+
+export interface LotteryResult {
+  won: boolean
+  message: string
+  order?: { id: string; status?: string; type?: string; amountCents?: number } | null
+  prize?: { id: string; name: string; type?: string } | null
+}
