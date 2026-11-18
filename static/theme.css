@@ -395,3 +395,8 @@ body[data-template="6"] .home-prize-card .notice-box { display:none; }
 body[data-template="6"] .home-steps { justify-content:center; }
 
 @media (max-width: 700px) { .admin-entry { display:none !important; } }
+
+/* 主题色：短色块 + 色号输入 */
+.color-field .color-control { display:flex; align-items:center; gap:8px; }
+.color-field input[type="color"] { width:56px; height:42px; flex:0 0 56px; padding:3px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; }
+.color-field #theme-color-text { flex:1 1 auto; min-width:0; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; text-transform:uppercase; }
