@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import AdminShell from '../../components/AdminShell.vue'
+import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
 
 interface UserRow {
@@ -83,7 +84,7 @@ async function toggleTest(user: UserRow) {
         </table>
         <p v-if="!users.length" class="empty-canvas">暂无用户</p>
       </div>
-      <div class="pager"><button class="btn small secondary" type="button" :disabled="page <= 1" @click="page--; load()">上一页</button><span>{{ page }} / {{ pages }}</span><button class="btn small secondary" type="button" :disabled="page >= pages" @click="page++; load()">下一页</button></div>
+      <Pagination :page="page" :pages="pages" :total="total" @update:page="page = $event; load()" />
     </section>
   </AdminShell>
 </template>

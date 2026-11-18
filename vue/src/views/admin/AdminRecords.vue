@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import AdminShell from '../../components/AdminShell.vue'
+import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
 
 const kind = ref<'orders' | 'attempts' | 'draws'>('orders')
@@ -9,6 +10,10 @@ const loading = ref(true)
 const message = ref('')
 const search = ref('')
 const date = ref('')
+const page = ref(1)
+const pageSize = 20
+const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize)))
+const pagedRows = computed(() => rows.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 
 const columns = computed(() => {
   if (kind.value === 'orders') return ['prize_name', 'status', 'type', 'amountCents', 'nickname', 'recipient', 'createdAt']
@@ -24,6 +29,7 @@ async function load() {
     const params = new URLSearchParams({ kind: kind.value, q: search.value, date: date.value })
     const data = await api<{ rows: Array<Record<string, unknown>> }>(`/api/admin/records?${params}`)
     rows.value = data.rows
+    page.value = 1
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : '读取记录失败'
   } finally {
@@ -84,7 +90,7 @@ function display(value: unknown) {
         <table class="admin-table">
           <thead><tr><th v-for="column in columns" :key="column">{{ column }}</th><th v-if="kind === 'orders'">操作</th></tr></thead>
           <tbody>
-            <tr v-for="(row, index) in rows" :key="index">
+            <tr v-for="(row, index) in pagedRows" :key="index">
               <td v-for="column in columns" :key="column">{{ display(row[column]) }}</td>
               <td v-if="kind === 'orders'" class="row-actions"><button v-for="action in orderActions(row)" :key="action.status" type="button" @click="updateOrder(row, action.status)">{{ action.label }}</button></td>
             </tr>
@@ -92,6 +98,7 @@ function display(value: unknown) {
         </table>
         <p v-if="!rows.length" class="empty-canvas">暂无记录</p>
       </div>
+      <Pagination :page="page" :pages="totalPages" :total="rows.length" @update:page="page = $event" />
     </section>
   </AdminShell>
 </template>

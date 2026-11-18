@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import AdminShell from '../../components/AdminShell.vue'
+import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
 
 interface Account { id: string; username: string; role: string; enabled: number; createdAt?: string }
 const accounts = ref<Account[]>([])
 const loading = ref(true)
 const message = ref('')
+const page = ref(1)
+const pageSize = 20
+const totalPages = computed(() => Math.max(1, Math.ceil(accounts.value.length / pageSize)))
+const pagedAccounts = computed(() => accounts.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 const form = reactive({ username: '', password: '', role: 'operator' })
 
 onMounted(load)
@@ -16,6 +21,7 @@ async function load() {
   try {
     const data = await api<{ accounts: Account[] }>('/api/admin/accounts')
     accounts.value = data.accounts
+    page.value = 1
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : '读取账号失败'
   } finally {
@@ -69,13 +75,14 @@ async function toggle(account: Account) {
           <table class="admin-table">
             <thead><tr><th>用户名</th><th>角色</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
-              <tr v-for="account in accounts" :key="account.id">
+              <tr v-for="account in pagedAccounts" :key="account.id">
                 <td>{{ account.username }}</td><td>{{ account.role === 'super' ? '超级管理员' : '运营账号' }}</td><td>{{ account.enabled ? '启用' : '停用' }}</td>
                 <td class="row-actions"><button type="button" @click="resetPassword(account)">重置密码</button><button type="button" @click="toggle(account)">{{ account.enabled ? '停用' : '启用' }}</button></td>
               </tr>
             </tbody>
           </table>
         </div>
+        <Pagination :page="page" :pages="totalPages" :total="accounts.length" @update:page="page = $event" />
       </section>
       <section class="card">
         <h2>新增账号</h2>

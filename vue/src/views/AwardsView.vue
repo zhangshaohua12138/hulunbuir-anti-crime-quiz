@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import Pagination from '../components/Pagination.vue'
 import { api } from '../api'
 import { useSession } from '../store'
 
@@ -26,6 +27,10 @@ const loading = ref(true)
 const error = ref('')
 const claimOrder = ref<Order | null>(null)
 const claimBusy = ref(false)
+const page = ref(1)
+const pageSize = 10
+const totalPages = computed(() => Math.max(1, Math.ceil(orders.value.length / pageSize)))
+const pagedOrders = computed(() => orders.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 const claimError = ref('')
 const claimForm = reactive({ name: '', phone: '', address: '', pickup: '' })
 
@@ -38,6 +43,7 @@ onMounted(async () => {
   try {
     const result = await api<{ orders: Order[] }>('/api/orders')
     orders.value = result.orders || []
+    page.value = 1
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : '读取奖品失败'
   } finally {
@@ -82,6 +88,7 @@ async function confirmTransfer(order: Order) {
     error.value = ''
     const result = await api<{ orders: Order[] }>('/api/orders')
     orders.value = result.orders || []
+    page.value = 1
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : '确认收款失败'
   }
@@ -99,6 +106,7 @@ async function submitClaim() {
     claimOrder.value = null
     const result = await api<{ orders: Order[] }>('/api/orders')
     orders.value = result.orders || []
+    page.value = 1
   } catch (reason) {
     claimError.value = reason instanceof Error ? reason.message : '登记失败'
   } finally {
@@ -118,7 +126,7 @@ async function submitClaim() {
       <div class="eyebrow">我的奖品</div>
       <h1>记录每一份收获</h1>
       <p class="help">中奖后请按提示确认收款或登记收货信息。</p>
-      <div v-for="order in orders" :key="order.id" class="award-row">
+      <div v-for="order in pagedOrders" :key="order.id" class="award-row">
         <div>
           <strong>{{ order.prize_name || order.name || '奖品' }}</strong>
           <p class="help">{{ amount(order) || order.message || '' }}</p>
@@ -130,6 +138,7 @@ async function submitClaim() {
       <p v-if="!loading && !orders.length" class="empty-canvas">暂无中奖记录。完成答题并达标后，可参与好礼抽取。</p>
       <div v-if="loading" class="loading">正在读取奖品…</div>
       <p v-if="error" class="form-error">{{ error }}</p>
+      <Pagination :page="page" :pages="totalPages" :total="orders.length" @update:page="page = $event" />
     </main>
 
     <div v-if="claimOrder" class="claim-mask" @click.self="claimOrder = null">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import Pagination from '../components/Pagination.vue'
 import { api } from '../api'
 import { useSession } from '../store'
 
@@ -19,12 +20,17 @@ const frozen = ref(false)
 const loading = ref(true)
 const error = ref('')
 const winners = route.query.winners === '1'
+const page = ref(1)
+const pageSize = 20
+const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize)))
+const pagedRows = computed(() => rows.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 
 onMounted(async () => {
   await session.loadBoot()
   try {
     const result = await api<{ rows: Row[]; me: Row | null; frozen: boolean }>(`/api/leaderboard${winners ? '?winners=1' : ''}`)
     rows.value = result.rows
+    page.value = 1
     me.value = result.me
     frozen.value = result.frozen
   } catch (reason) {
@@ -56,7 +62,7 @@ function time(seconds: number) {
         我的排名：<strong>第 {{ me.rank }} 名</strong> · {{ me.points }} 分
       </div>
       <div class="rank-list">
-        <div v-for="row in rows" :key="row.rank + row.nickname" class="rank-row" :class="{ mine: me?.nickname === row.nickname }">
+        <div v-for="row in pagedRows" :key="row.rank + row.nickname" class="rank-row" :class="{ mine: me?.nickname === row.nickname }">
           <span class="rank-no">{{ row.rank }}</span>
           <span class="rank-name">{{ row.nickname }}</span>
           <span class="rank-points">{{ row.points }} 分</span>
@@ -64,6 +70,7 @@ function time(seconds: number) {
         </div>
         <p v-if="!loading && !rows.length" class="empty-canvas">还没有上榜记录。</p>
       </div>
+      <Pagination :page="page" :pages="totalPages" :total="rows.length" @update:page="page = $event" />
       <div v-if="loading" class="loading">正在读取榜单…</div>
       <p v-if="error" class="form-error">{{ error }}</p>
     </main>

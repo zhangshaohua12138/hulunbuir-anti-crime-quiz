@@ -491,3 +491,8 @@ p { line-height: 1.75; }
 .settings-save p { margin: 3px 0 0; }
 @media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } .wide-card { grid-column: auto; } .settings-overview { align-items: flex-start; flex-direction: column; } .overview-chips { justify-content: flex-start; } }
 @media (max-width: 600px) { .settings-save { position: static; flex-direction: column; align-items: stretch; } }
+
+.pagination { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 16px 0 4px; color: var(--muted); font-size: 11px; }
+.pagination button { border: 1px solid var(--line); background: #fff; color: var(--primary-dark); border-radius: 7px; padding: 5px 9px; font-size: 11px; }
+.pagination button:disabled { opacity: .4; cursor: not-allowed; }
+.pagination-info { min-width: 110px; text-align: center; }

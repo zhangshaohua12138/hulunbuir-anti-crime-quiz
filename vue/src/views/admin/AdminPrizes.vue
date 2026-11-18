@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import AdminShell from '../../components/AdminShell.vue'
+import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
 
 interface Prize {
@@ -21,6 +22,10 @@ const prizes = ref<Prize[]>([])
 const loading = ref(true)
 const message = ref('')
 const editing = ref(false)
+const page = ref(1)
+const pageSize = 20
+const totalPages = computed(() => Math.max(1, Math.ceil(prizes.value.length / pageSize)))
+const pagedPrizes = computed(() => prizes.value.slice((page.value - 1) * pageSize, page.value * pageSize))
 const form = reactive<Prize>({ name: '', type: 'none', amountCents: 0, stock: 1, dailyLimit: 1, weight: 1, enabled: true, points: 0 })
 
 onMounted(load)
@@ -30,6 +35,7 @@ async function load() {
   try {
     const data = await api<{ prizes: Prize[] }>('/api/admin/prizes')
     prizes.value = data.prizes
+    page.value = 1
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : '读取奖品失败'
   } finally {
@@ -76,7 +82,7 @@ const amount = (prize: Prize) => (prize.type === 'cash' ? `¥ ${(prize.amountCen
         <table class="admin-table">
           <thead><tr><th>奖品</th><th>类型</th><th>面额/积分</th><th>库存</th><th>日限</th><th>权重</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
-            <tr v-for="prize in prizes" :key="prize.id">
+            <tr v-for="prize in pagedPrizes" :key="prize.id">
               <td>{{ prize.name }}</td><td>{{ typeName(prize.type) }}</td><td>{{ amount(prize) }}</td>
               <td>{{ prize.issued || 0 }} / {{ prize.stock }}</td><td>{{ prize.dailyLimit }}</td><td>{{ prize.weight }}</td>
               <td>{{ prize.enabled ? '启用' : '停用' }}</td>
@@ -85,6 +91,7 @@ const amount = (prize: Prize) => (prize.type === 'cash' ? `¥ ${(prize.amountCen
           </tbody>
         </table>
       </div>
+      <Pagination :page="page" :pages="totalPages" :total="prizes.length" @update:page="page = $event" />
     </section>
     <form v-if="editing" class="card admin-form" @submit.prevent="save">
       <h2>{{ form.id ? '编辑奖品' : '新增奖品' }}</h2>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import AdminShell from '../../components/AdminShell.vue'
+import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
 
 interface Question {
@@ -153,11 +154,7 @@ function answerToggle(id: string) {
         </article>
         <p v-if="!list.length" class="empty-canvas">暂无题目</p>
       </div>
-      <div class="pager">
-        <button class="btn small secondary" type="button" :disabled="page <= 1" @click="page--; load()">上一页</button>
-        <span>{{ page }} / {{ pages }}</span>
-        <button class="btn small secondary" type="button" :disabled="page >= pages" @click="page++; load()">下一页</button>
-      </div>
+      <Pagination :page="page" :pages="pages" :total="total" @update:page="page = $event; load()" />
     </section>
 
     <form v-if="editing" class="card admin-form question-form" @submit.prevent="save">
