@@ -29,7 +29,7 @@ export const customDefaults: Record<string, Record<string, unknown>> = {
   'custom-button': { label: '了解更多', link: '#/rules', align: 'center', background: '', color: '', radius: '10', full: false },
   'custom-divider': { color: '', margin: '18' },
   'custom-carousel': { slides: [{ src: '/static/theme-previews/template-1.png', link: '', title: '活动主视觉' }], height: '240', radius: '12', autoplay: true },
-  'custom-banner': { image: '/static/theme-previews/template-2.png', title: '平安建设，共建共享', subtitle: '让法治精神走进千家万户', buttonText: '了解活动', link: '#/rules', align: 'left', color: '#ffffff', overlay: '0.45', height: '260', radius: '12' },
+  'custom-banner': { image: '/static/theme-previews/template-2.png', title: '平安建设，共建共享', subtitle: '让法治精神走进千家万户', titleSize: '26', titleColor: '#ffffff', subtitleSize: '14', subtitleColor: '#ffffff', textX: '8', textY: '24', textWidth: '70', textBackground: '', textPadding: '0', textRadius: '0', align: 'left', buttonText: '了解活动', link: '#/rules', buttonBackground: '#ffffff28', buttonColor: '#ffffff', buttonRadius: '8', overlay: '0.45', height: '260', radius: '12' },
 }
 
 export const allBlockDefinitions = [...blockDefinitions, ...customBlockDefinitions] as const

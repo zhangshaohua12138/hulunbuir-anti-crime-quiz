@@ -104,7 +104,7 @@ CUSTOM_FIELDS={
  'custom-button':{'label','link','align','background','color','radius','full'},
  'custom-divider':{'color','margin'},
  'custom-carousel':{'slides','height','radius','autoplay'},
- 'custom-banner':{'image','title','subtitle','buttonText','link','align','color','overlay','height','radius'},
+ 'custom-banner':{'image','title','subtitle','titleSize','titleColor','subtitleSize','subtitleColor','textX','textY','textWidth','textBackground','textPadding','textRadius','align','buttonText','link','buttonBackground','buttonColor','buttonRadius','overlay','height','radius'},
 }
 def clean_custom_props(kind, props):
     allowed=CUSTOM_FIELDS[kind]; out={}
