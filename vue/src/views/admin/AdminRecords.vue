@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AdminShell from '../../components/AdminShell.vue'
 import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
@@ -7,7 +8,11 @@ import { api } from '../../api'
 type Kind = 'orders' | 'attempts' | 'draws'
 interface Column { key: string; label: string }
 
-const kind = ref<Kind>('orders')
+const route = useRoute()
+const router = useRouter()
+const kind = ref<Kind>((route.query.kind as Kind) || 'orders')
+const userId = ref(String(route.query.userId || ''))
+const userName = ref(String(route.query.userName || ''))
 const rows = ref<Array<Record<string, unknown>>>([])
 const loading = ref(true)
 const message = ref('')
@@ -57,10 +62,27 @@ const typeLabels: Record<string, string> = {
 
 onMounted(load)
 
+watch(() => route.query, (query) => {
+  if (!query.userId) return
+  userId.value = String(query.userId)
+  userName.value = String(query.userName || '')
+  kind.value = (query.kind as Kind) || 'orders'
+  page.value = 1
+  load()
+})
+
+function clearUser() {
+  userId.value = ''
+  userName.value = ''
+  void router.replace({ path: '/admin/records', query: { kind: kind.value } })
+  load()
+}
+
 async function load() {
   loading.value = true
   try {
     const params = new URLSearchParams({ kind: kind.value, q: search.value, date: date.value })
+    if (userId.value) params.set('userId', userId.value)
     const data = await api<{ rows: Array<Record<string, unknown>> }>(`/api/admin/records?${params}`)
     rows.value = data.rows
     page.value = 1
@@ -126,6 +148,7 @@ function orderActions(row: Record<string, unknown>) {
   <AdminShell active="records" title="记录与发奖" subtitle="查看答题、抽奖和中奖订单，导出对账数据。">
     <p v-if="message" class="notice-bar">{{ message }}</p>
     <section class="card">
+      <div v-if="userId" class="user-filter">当前用户：<strong>{{ userName || userId.slice(0, 12) }}</strong><button type="button" @click="clearUser">清除筛选</button></div>
       <div class="toolbar">
         <button v-for="item in [{ key: 'orders', label: '中奖订单' }, { key: 'attempts', label: '答题记录' }, { key: 'draws', label: '抽奖记录' }]" :key="item.key" class="btn small" :class="{ secondary: kind !== item.key }" type="button" @click="switchKind(item.key as Kind)">{{ item.label }}</button>
         <span class="spacer" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminShell from '../../components/AdminShell.vue'
 import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
@@ -24,6 +25,7 @@ const total = ref(0)
 const search = ref('')
 const loading = ref(true)
 const message = ref('')
+const router = useRouter()
 
 onMounted(load)
 
@@ -40,6 +42,10 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+function openRecords(user: UserRow, kind: 'attempts' | 'orders') {
+  void router.push({ path: '/admin/records', query: { kind, userId: user.id, userName: user.nickname } })
 }
 
 async function toggleTest(user: UserRow) {
@@ -76,9 +82,9 @@ async function toggleTest(user: UserRow) {
               <td class="user-nickname">{{ user.nickname }}</td>
               <td class="user-id" :title="user.id">{{ user.id.slice(0, 12) }}…</td>
               <td>{{ user.followed ? '已关注' : '未关注' }}</td>
-              <td>{{ user.attempts }}</td>
+              <td><button class="count-link" type="button" @click="openRecords(user, 'attempts')">{{ user.attempts }}</button></td>
               <td>{{ user.best }}</td>
-              <td>{{ user.orders }}</td>
+              <td><button class="count-link" type="button" @click="openRecords(user, 'orders')">{{ user.orders }}</button></td>
               <td>{{ user.is_test ? '测试账号' : user.blocked ? '已停用' : '普通用户' }}</td>
               <td class="row-actions"><button type="button" @click="toggleTest(user)">{{ user.is_test ? '取消测试' : '标记测试' }}</button></td>
             </tr>
