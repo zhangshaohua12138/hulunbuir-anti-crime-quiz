@@ -21,7 +21,7 @@ const nav = computed(() =>
           { key: 'integrations', to: '/admin/integrations', label: '微信配置', icon: '微' },
         ]
       : []),
-    { key: 'designer', to: '/designer', label: '布局设计', icon: '布' },
+    ...(isSuper.value ? [{ key: 'designer', to: '/designer', label: '布局设计', icon: '布' }] : []),
   ],
 )
 

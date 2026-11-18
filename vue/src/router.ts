@@ -35,9 +35,9 @@ const router = createRouter({
     { path: '/admin/prizes', component: AdminPrizes, meta: { admin: true } },
     { path: '/admin/users', component: AdminUsers, meta: { admin: true } },
     { path: '/admin/records', component: AdminRecords, meta: { admin: true } },
-    { path: '/admin/accounts', component: AdminAccounts, meta: { admin: true } },
-    { path: '/admin/integrations', component: AdminIntegrations, meta: { admin: true } },
-    { path: '/designer', component: DesignerView, meta: { admin: true } },
+    { path: '/admin/accounts', component: AdminAccounts, meta: { admin: true, super: true } },
+    { path: '/admin/integrations', component: AdminIntegrations, meta: { admin: true, super: true } },
+    { path: '/designer', component: DesignerView, meta: { admin: true, super: true } },
     { path: '/login', component: AdminLoginView },
   ],
 })
@@ -47,6 +47,7 @@ router.beforeEach(async (to) => {
   const session = useSession()
   try {
     await session.loadAdmin()
+    if (to.meta.super && session.admin?.role !== 'super') return { path: '/admin' }
     return true
   } catch {
     return { path: '/login', query: { next: to.fullPath } }
