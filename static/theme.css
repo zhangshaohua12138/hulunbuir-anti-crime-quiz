@@ -282,3 +282,5 @@ body[data-template="3"] .site-header { border-bottom-color: #d4e8ee; }
 .template-card.t3 { border-left:8px solid #2b8493; background:linear-gradient(135deg,#f2fdff,#dcf3f6); }
 .template-option input:checked + .template-card { border-color:var(--red-dark); box-shadow:0 0 0 3px #a9c2ea44; }
 @media (max-width:700px) { .template-grid { grid-template-columns:1fr; } }
+
+.template-preview { width:100%; height:150px; object-fit:cover; object-position:top center; border-radius:8px; border:1px solid #dbe7f2; background:#eef5fc; display:block; }
