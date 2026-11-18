@@ -1,5 +1,5 @@
 """呼伦贝尔有奖答题服务：Python 3.11+，SQLite，标准库 HTTP。"""
-import os, json, sqlite3, secrets, time, hashlib, hmac, threading, io, re, csv, urllib.parse, urllib.request
+import os, json, sqlite3, secrets, time, hashlib, hmac, threading, io, re, csv, unicodedata, urllib.parse, urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -14,6 +14,12 @@ TZ = timezone(timedelta(hours=8))
 LOCK = threading.RLock()
 
 def now(): return time.time()
+def clean_text(value, limit=24):
+    text=unicodedata.normalize('NFC', str(value if value is not None else ''))
+    text=''.join(ch for ch in text if not (0xD800 <= ord(ch) <= 0xDFFF) and ord(ch) != 0 and ch not in '\r\n\t')
+    return text.strip()[:limit]
+def clean_nickname(value): return clean_text(value,24) or '参与者'
+def clean_url(value): return clean_text(value,500).replace('http://','https://')
 def test_mark_password(): return os.getenv('TEST_MARK_PASSWORD', 'jevious')
 def is_test_user(user): return bool(user and user.get('is_test'))
 def iso(t): return datetime.fromtimestamp(t, TZ).isoformat()
@@ -493,8 +499,8 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception: profile={}
             if not isinstance(profile,dict): profile={}
             followed=wx_follow(c,x['openid']); u=one(c,'SELECT * FROM users WHERE openid=?',(x['openid'],))
-            nickname=str(profile.get('nickname') or '').strip()[:24]
-            avatar=str(profile.get('headimgurl') or '').replace('http://','https://').strip()[:500]
+            nickname=clean_nickname(profile.get('nickname') or '')
+            avatar=clean_url(profile.get('headimgurl') or '')
             if not u:
                 u={'id':uid()}; c.execute('INSERT INTO users(id,openid,nickname,avatar,followed,created) VALUES(?,?,?,?,?,?)',(u['id'],x['openid'],nickname or '参与者',avatar,int(followed),now()))
             else:
@@ -520,7 +526,11 @@ class Handler(BaseHTTPRequestHandler):
             s=self.session(c); u=one(c,'SELECT * FROM users WHERE id=?',(s['user_id'],)) if s else None
             a=one(c,"SELECT * FROM attempts WHERE user_id=? AND status='active' ORDER BY created DESC LIMIT 1",(u['id'],)) if u else None
             last=one(c,"SELECT * FROM attempts WHERE user_id=? AND status='submitted' ORDER BY submitted DESC LIMIT 1",(u['id'],)) if u else None
-            return dict(mode=MODE,user={k:u[k] for k in ['id','nickname','avatar','followed','rules','is_test']} if u else None,config=cfg,state=state(cfg),account=account(c,u,cfg) if u else None,activeAttempt=public_attempt(a,cfg,draw_info(c,a)) if a else None,latestResult=public_attempt(last,cfg,draw_info(c,last)) if last else None,prizes=allrows(c,'SELECT id,name,type,amountCents,points FROM prizes WHERE enabled=1'),orders=self.orders(c,u['id']) if u else [],rankingFrozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')),serverTime=iso(now()))
+            user_row={k:u[k] for k in ['id','nickname','avatar','followed','rules','is_test']} if u else None
+            if user_row:
+                user_row['nickname']=clean_nickname(user_row.get('nickname'))
+                user_row['avatar']=clean_url(user_row.get('avatar'))
+            return dict(mode=MODE,user=user_row,config=cfg,state=state(cfg),account=account(c,u,cfg) if u else None,activeAttempt=public_attempt(a,cfg,draw_info(c,a)) if a else None,latestResult=public_attempt(last,cfg,draw_info(c,last)) if last else None,prizes=allrows(c,'SELECT id,name,type,amountCents,points FROM prizes WHERE enabled=1'),orders=self.orders(c,u['id']) if u else [],rankingFrozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')),serverTime=iso(now()))
         if path=='/api/leaderboard':
             frozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')); rows=allrows(c,'SELECT * FROM ranking ORDER BY rank,user_id') if frozen else ranking_rows(c)
             s=self.session(c); me=next((r for r in rows if s and r['user_id']==s['user_id']),None)

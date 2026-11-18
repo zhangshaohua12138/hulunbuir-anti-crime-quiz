@@ -647,6 +647,12 @@ class ServerTests(unittest.TestCase):
         self.assertGreater(self.sql('SELECT COUNT(*) n FROM prizes')[0]['n'],0)
         self.assertTrue(self.sql("SELECT value FROM settings WHERE key='config'"))
 
+    def test_nickname_special_characters_are_safe(self):
+        self.assertEqual(server.clean_text('A😀\x00\ud800<b>',40),'A😀<b>')
+        user=self.login('测试😀<b>')
+        boot=self.ok('/api/bootstrap',cookie=user)
+        self.assertEqual(boot['user']['nickname'],'测试😀<b>')
+
     def test_super_and_operator_permissions(self):
         admin=self.admin()
         me=self.ok('/api/admin/me',cookie=admin)
