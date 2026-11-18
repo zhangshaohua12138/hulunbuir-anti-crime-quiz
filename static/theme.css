@@ -27,7 +27,7 @@ body {
 .brand-mark { display: none; }
 
 .hero {
-  background-image: linear-gradient(100deg, rgba(3, 15, 33, .96) 0%, rgba(6, 35, 70, .92) 48%, rgba(9, 48, 95, .76) 100%), url('/static/hero-bg.svg');
+  background-image: linear-gradient(100deg, rgba(3, 15, 33, .96) 0%, rgba(6, 35, 70, .92) 48%, rgba(9, 48, 95, .76) 100%), var(--hero-image, url('/static/hero-bg.svg'));
   background-size: cover;
   background-position: center;
   border: 1px solid #173e6e;
