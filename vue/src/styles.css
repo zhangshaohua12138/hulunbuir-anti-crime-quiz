@@ -464,3 +464,30 @@ p { line-height: 1.75; }
 .integration-save p { margin: 3px 0 0; }
 @media (max-width: 900px) { .integration-grid { grid-template-columns: 1fr; } .wide-card { grid-column: auto; } .card-fields.three { grid-template-columns: 1fr 1fr; } .wechat-overview { align-items: flex-start; flex-direction: column; } .overview-chips { justify-content: flex-start; } }
 @media (max-width: 600px) { .card-fields, .card-fields.three { grid-template-columns: 1fr; } .integration-save { position: static; flex-direction: column; align-items: stretch; } }
+
+/* Activity settings cards */
+.settings-overview { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px 24px; margin-bottom: 16px; border-radius: 16px; background: linear-gradient(120deg, #1a3b5c, #3e6f9c); color: #fff; box-shadow: 0 12px 30px #10253d26; }
+.settings-overview h2 { margin: 4px 0; color: #fff; }
+.settings-overview .eyebrow { color: #b4d3ee; }
+.settings-overview .help { color: #c2d8ea; margin: 0; }
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.settings-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px #10253d0d; transition: box-shadow .15s, transform .15s; }
+.settings-card:hover { box-shadow: 0 14px 34px #10253d1c; transform: translateY(-1px); }
+.settings-card::before { content: ""; display: block; height: 4px; background: #5d8fc4; }
+.settings-card.rules-card::before { background: #4a9c79; }
+.settings-card.budget-card::before { background: #d69a32; }
+.settings-card.share-card::before { background: #c96b76; }
+.settings-card.award-card::before { background: #71839c; }
+.settings-card .card-icon { background: linear-gradient(135deg, #3c76b4, #244d7b); }
+.settings-card.rules-card .card-icon { background: linear-gradient(135deg, #4a9c79, #2c6d57); }
+.settings-card.budget-card .card-icon { background: linear-gradient(135deg, #d9a244, #a46f1f); }
+.settings-card.share-card .card-icon { background: linear-gradient(135deg, #cf7a84, #9f4753); }
+.settings-card.award-card .card-icon { background: linear-gradient(135deg, #71839c, #485a71); }
+.switch-row { display: flex !important; grid-column: 1 / -1; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+.switch-row input { width: auto; }
+.card-fields textarea { width: 100%; padding: 9px; border: 1px solid var(--line); border-radius: 7px; font-size: 11px; line-height: 1.6; resize: vertical; }
+.settings-save { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; position: sticky; bottom: 12px; box-shadow: 0 -4px 20px #10253d0f; }
+.settings-save strong { font-size: 13px; }
+.settings-save p { margin: 3px 0 0; }
+@media (max-width: 900px) { .settings-grid { grid-template-columns: 1fr; } .wide-card { grid-column: auto; } .settings-overview { align-items: flex-start; flex-direction: column; } .overview-chips { justify-content: flex-start; } }
+@media (max-width: 600px) { .settings-save { position: static; flex-direction: column; align-items: stretch; } }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AdminShell from '../../components/AdminShell.vue'
 import { api } from '../../api'
 
@@ -7,6 +7,20 @@ const config = ref<Record<string, any> | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 const message = ref('')
+
+const configured = computed(() => Boolean(config.value))
+const stateLabel = computed(() => {
+  if (!config.value) return '读取中'
+  if (config.value.paused) return '已暂停'
+  const now = Date.now()
+  const start = new Date(config.value.startAt).getTime()
+  const end = new Date(config.value.endAt).getTime()
+  if (now < start) return '未开始'
+  if (now > end) return '已结束'
+  return '进行中'
+})
+const budgetYuan = computed(() => ((Number(config.value?.budgetCents || 0)) / 100).toFixed(2))
+const dailyYuan = computed(() => ((Number(config.value?.dailyBudgetCents || 0)) / 100).toFixed(2))
 
 onMounted(async () => {
   try {
@@ -39,25 +53,89 @@ async function save() {
 <template>
   <AdminShell active="config" title="活动配置" subtitle="活动时间、答题规则、预算和分享复活方式。">
     <p v-if="message" class="notice-bar">{{ message }}</p>
-    <div v-if="loading" class="loading">读取配置…</div>
-    <form v-else-if="config" class="card admin-form" @submit.prevent="save">
-      <div class="form-grid">
-        <label>活动开始时间<input v-model="config.startAt" placeholder="2026-11-18T00:00:00+08:00" /></label>
-        <label>活动结束时间<input v-model="config.endAt" placeholder="2026-11-24T23:59:59+08:00" /></label>
-        <label>每日免费次数<input v-model.number="config.dailyFree" type="number" min="1" /></label>
-        <label>每日复活上限<input v-model.number="config.reviveLimit" type="number" min="0" /></label>
-        <label>抽奖达标分数<input v-model.number="config.passScore" type="number" min="1" max="100" /></label>
-        <label>整卷限时（秒）<input v-model.number="config.timeLimitSeconds" type="number" min="60" /></label>
-        <label>排行榜展示条数<input v-model.number="config.leaderboardLimit" type="number" min="1" /></label>
-        <label>获奖人数<input v-model.number="config.winnerCount" type="number" min="1" /></label>
-        <label>总红包预算（分）<input v-model.number="config.budgetCents" type="number" min="0" /></label>
-        <label>每日红包预算（分）<input v-model.number="config.dailyBudgetCents" type="number" min="0" /></label>
-        <label>分享复活方式<select v-model="config.shareMode"><option value="manual">人工确认</option><option value="sdk">微信分享</option><option value="free">直接领取</option><option value="disabled">关闭</option></select></label>
+
+    <section class="settings-overview">
+      <div>
+        <div class="eyebrow">ACTIVITY SETTINGS</div>
+        <h2>活动运行配置</h2>
+        <p class="help">保存后立即生效；活动封榜后部分结算参数不可修改。</p>
       </div>
-      <label class="check-row"><input v-model="config.budgetAutoDaily" type="checkbox" />每日预算按总预算 / 活动天数自动计算</label>
-      <label class="check-row"><input v-model="config.paused" type="checkbox" />暂停活动</label>
-      <label>评优说明<textarea v-model="config.awardDescription" rows="4" /></label>
-      <div class="form-actions">
+      <div class="overview-chips">
+        <span class="overview-chip" :class="{ ok: stateLabel === '进行中' }">{{ stateLabel }}</span>
+        <span class="overview-chip">预算 ¥{{ budgetYuan }}</span>
+        <span class="overview-chip accent">每日 ¥{{ dailyYuan }}</span>
+      </div>
+    </section>
+
+    <div v-if="loading" class="loading">读取配置…</div>
+    <form v-else-if="config" class="settings-grid" @submit.prevent="save">
+      <section class="settings-card time-card">
+        <header class="card-head">
+          <span class="card-icon">时</span>
+          <div class="card-heading"><h2>活动时间与状态</h2><p>活动起止时间、暂停和参与窗口</p></div>
+          <span class="card-state" :class="{ ok: stateLabel === '进行中' }">{{ stateLabel }}</span>
+        </header>
+        <div class="card-fields">
+          <label class="wide">开始时间<input v-model="config.startAt" placeholder="2026-11-18T00:00:00+08:00" /></label>
+          <label class="wide">结束时间<input v-model="config.endAt" placeholder="2026-11-24T23:59:59+08:00" /></label>
+          <label class="switch-row wide"><input v-model="config.paused" type="checkbox" />暂停活动</label>
+        </div>
+      </section>
+
+      <section class="settings-card rules-card">
+        <header class="card-head">
+          <span class="card-icon">规</span>
+          <div class="card-heading"><h2>答题规则</h2><p>机会、分数、时长和榜单人数</p></div>
+          <span class="card-state">满分 100</span>
+        </header>
+        <div class="card-fields three">
+          <label>每日免费次数<input v-model.number="config.dailyFree" type="number" min="1" /></label>
+          <label>每日复活上限<input v-model.number="config.reviveLimit" type="number" min="0" /></label>
+          <label>抽奖达标分数<input v-model.number="config.passScore" type="number" min="1" max="100" /></label>
+          <label>整卷限时（秒）<input v-model.number="config.timeLimitSeconds" type="number" min="60" /></label>
+          <label>排行榜展示条数<input v-model.number="config.leaderboardLimit" type="number" min="1" /></label>
+          <label>获奖人数<input v-model.number="config.winnerCount" type="number" min="1" /></label>
+        </div>
+      </section>
+
+      <section class="settings-card budget-card">
+        <header class="card-head">
+          <span class="card-icon">算</span>
+          <div class="card-heading"><h2>红包预算</h2><p>总预算、每日额度和自动平均</p></div>
+          <span class="card-state">当前 ¥{{ budgetYuan }}</span>
+        </header>
+        <div class="card-fields">
+          <label>总红包预算（分）<input v-model.number="config.budgetCents" type="number" min="0" /></label>
+          <label>每日红包预算（分）<input v-model.number="config.dailyBudgetCents" type="number" min="0" /></label>
+          <label class="switch-row wide"><input v-model="config.budgetAutoDaily" type="checkbox" />每日预算按总预算 / 活动天数自动计算</label>
+        </div>
+        <div class="card-foot"><span>约 ¥{{ budgetYuan }}</span><span>每日约 ¥{{ dailyYuan }}</span></div>
+      </section>
+
+      <section class="settings-card share-card">
+        <header class="card-head">
+          <span class="card-icon">享</span>
+          <div class="card-heading"><h2>分享复活</h2><p>未达标用户获取复活机会的方式</p></div>
+          <span class="card-state accent">{{ config.shareMode === 'sdk' ? '微信分享' : config.shareMode === 'manual' ? '人工确认' : config.shareMode === 'free' ? '直接领取' : '已关闭' }}</span>
+        </header>
+        <div class="card-fields">
+          <label class="wide">复活方式<select v-model="config.shareMode"><option value="manual">人工确认</option><option value="sdk">微信分享</option><option value="free">直接领取</option><option value="disabled">关闭</option></select></label>
+        </div>
+      </section>
+
+      <section class="settings-card award-card wide-card">
+        <header class="card-head">
+          <span class="card-icon">评</span>
+          <div class="card-heading"><h2>评优说明</h2><p>活动结束后展示给参与者的获奖说明</p></div>
+          <span class="card-state">前 {{ config.winnerCount }} 名</span>
+        </header>
+        <div class="card-fields">
+          <label class="wide">评优与奖品说明<textarea v-model="config.awardDescription" rows="4" /></label>
+        </div>
+      </section>
+
+      <div class="settings-save">
+        <div><strong>保存后立即生效</strong><p class="help">修改活动时间或预算前，请确认当前活动状态和资金安排。</p></div>
         <button class="btn" type="submit" :disabled="saving">{{ saving ? '保存中…' : '保存活动配置' }}</button>
       </div>
     </form>
