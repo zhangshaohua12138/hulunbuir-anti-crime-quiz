@@ -114,7 +114,7 @@ async function save() {
         </div>
       </section>
 
-      <section class="settings-card rules-card">
+      <section class="settings-card settings-rules-card">
         <header class="card-head">
           <span class="card-icon">规</span>
           <div class="card-heading"><h2>答题规则</h2><p>机会、分数、时长和榜单人数</p></div>

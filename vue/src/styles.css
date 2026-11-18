@@ -474,12 +474,12 @@ p { line-height: 1.75; }
 .settings-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px #10253d0d; transition: box-shadow .15s, transform .15s; }
 .settings-card:hover { box-shadow: 0 14px 34px #10253d1c; transform: translateY(-1px); }
 .settings-card::before { content: ""; display: block; height: 4px; background: #5d8fc4; }
-.settings-card.rules-card::before { background: #4a9c79; }
+.settings-card.settings-rules-card::before { background: #4a9c79; }
 .settings-card.budget-card::before { background: #d69a32; }
 .settings-card.share-card::before { background: #c96b76; }
 .settings-card.award-card::before { background: #71839c; }
 .settings-card .card-icon { background: linear-gradient(135deg, #3c76b4, #244d7b); }
-.settings-card.rules-card .card-icon { background: linear-gradient(135deg, #4a9c79, #2c6d57); }
+.settings-card.settings-rules-card .card-icon { background: linear-gradient(135deg, #4a9c79, #2c6d57); }
 .settings-card.budget-card .card-icon { background: linear-gradient(135deg, #d9a244, #a46f1f); }
 .settings-card.share-card .card-icon { background: linear-gradient(135deg, #cf7a84, #9f4753); }
 .settings-card.award-card .card-icon { background: linear-gradient(135deg, #71839c, #485a71); }
