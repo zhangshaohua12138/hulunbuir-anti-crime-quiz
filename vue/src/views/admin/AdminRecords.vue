@@ -4,7 +4,10 @@ import AdminShell from '../../components/AdminShell.vue'
 import Pagination from '../../components/Pagination.vue'
 import { api } from '../../api'
 
-const kind = ref<'orders' | 'attempts' | 'draws'>('orders')
+type Kind = 'orders' | 'attempts' | 'draws'
+interface Column { key: string; label: string }
+
+const kind = ref<Kind>('orders')
 const rows = ref<Array<Record<string, unknown>>>([])
 const loading = ref(true)
 const message = ref('')
@@ -15,11 +18,42 @@ const pageSize = ref(10)
 const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize.value)))
 const pagedRows = computed(() => rows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 
-const columns = computed(() => {
-  if (kind.value === 'orders') return ['prize_name', 'status', 'type', 'amountCents', 'nickname', 'recipient', 'createdAt']
-  if (kind.value === 'attempts') return ['nickname', 'score', 'passed', 'status', 'totalSeconds', 'createdAt']
-  return ['nickname', 'prize_name', 'won', 'message', 'createdAt']
+const columns = computed<Column[]>(() => {
+  if (kind.value === 'orders') return [
+    { key: 'prize_name', label: '奖品' },
+    { key: 'status', label: '发放状态' },
+    { key: 'type', label: '类型' },
+    { key: 'amountCents', label: '金额' },
+    { key: 'nickname', label: '用户' },
+    { key: 'recipient', label: '领取信息' },
+    { key: 'createdAt', label: '创建时间' },
+  ]
+  if (kind.value === 'attempts') return [
+    { key: 'nickname', label: '用户' },
+    { key: 'score', label: '得分' },
+    { key: 'passed', label: '是否达标' },
+    { key: 'status', label: '答题状态' },
+    { key: 'totalSeconds', label: '用时' },
+    { key: 'createdAt', label: '创建时间' },
+  ]
+  return [
+    { key: 'nickname', label: '用户' },
+    { key: 'prize_name', label: '奖品' },
+    { key: 'won', label: '是否中奖' },
+    { key: 'message', label: '抽奖结果' },
+    { key: 'createdAt', label: '创建时间' },
+  ]
 })
+
+const statusLabels: Record<string, string> = {
+  pending: '待发放', processing: '发放中', ready: '待领取', shipped: '已发货',
+  received: '已领取', granted: '已发放', wait_confirm: '待确认收款', paid: '已到账',
+  held: '挂账处理中', failed: '发放失败', returned: '已退回', retrying: '重试中',
+  active: '答题中', submitted: '已交卷', expired: '已过期',
+}
+const typeLabels: Record<string, string> = {
+  cash: '现金红包', points: '积分', physical: '实物', souvenir: '纪念品', phone: '话费', none: '未中奖',
+}
 
 onMounted(load)
 
@@ -37,9 +71,31 @@ async function load() {
   }
 }
 
-function switchKind(value: 'orders' | 'attempts' | 'draws') {
+function switchKind(value: Kind) {
   kind.value = value
+  page.value = 1
   load()
+}
+
+function display(key: string, value: unknown) {
+  if (value === null || value === undefined || value === '') return '—'
+  if (key === 'status') return statusLabels[String(value)] || String(value)
+  if (key === 'type') return typeLabels[String(value)] || String(value)
+  if (key === 'amountCents') return `¥ ${(Number(value) / 100).toFixed(2)}`
+  if (key === 'passed' || key === 'won') return value ? '是' : '否'
+  if (key === 'totalSeconds') {
+    const seconds = Number(value)
+    return `${Math.floor(seconds / 60)}分${String(seconds % 60).padStart(2, '0')}秒`
+  }
+  if (key === 'recipient' && typeof value === 'object') {
+    const recipient = value as Record<string, string>
+    return [recipient.name, recipient.phone, recipient.address || recipient.pickup].filter(Boolean).join(' / ') || '—'
+  }
+  if (key === 'createdAt') {
+    const text = String(value).replace('T', ' ')
+    return text.slice(0, 16)
+  }
+  return String(value)
 }
 
 async function updateOrder(row: Record<string, unknown>, status: string) {
@@ -58,18 +114,11 @@ function orderActions(row: Record<string, unknown>) {
   const status = String(row.status || '')
   if (type === 'phone' && status !== 'granted') return [{ label: '登记已发放', status: 'granted' }]
   if (['physical', 'souvenir'].includes(type)) {
-    if (status === 'pending') return [{ label: '登记发货', status: 'shipped' }]
+    if (status === 'pending' || status === 'ready') return [{ label: '登记发货', status: 'shipped' }]
     if (status === 'shipped') return [{ label: '确认收货', status: 'received' }, { label: '退回', status: 'returned' }]
     if (status === 'returned') return [{ label: '重新发货', status: 'shipped' }]
   }
   return []
-}
-
-function display(value: unknown) {
-  if (value && typeof value === 'object') return JSON.stringify(value)
-  if (value === true) return '是'
-  if (value === false) return '否'
-  return value ?? '—'
 }
 </script>
 
@@ -78,21 +127,23 @@ function display(value: unknown) {
     <p v-if="message" class="notice-bar">{{ message }}</p>
     <section class="card">
       <div class="toolbar">
-        <button v-for="item in [{ key: 'orders', label: '中奖订单' }, { key: 'attempts', label: '答题记录' }, { key: 'draws', label: '抽奖记录' }]" :key="item.key" class="btn small" :class="{ secondary: kind !== item.key }" type="button" @click="switchKind(item.key as any)">{{ item.label }}</button>
+        <button v-for="item in [{ key: 'orders', label: '中奖订单' }, { key: 'attempts', label: '答题记录' }, { key: 'draws', label: '抽奖记录' }]" :key="item.key" class="btn small" :class="{ secondary: kind !== item.key }" type="button" @click="switchKind(item.key as Kind)">{{ item.label }}</button>
         <span class="spacer" />
-        <input v-model="search" placeholder="单号/昵称/手机号" />
+        <input v-model="search" placeholder="单号 / 昵称 / 手机号" />
         <input v-model="date" type="date" />
         <button class="btn small secondary" type="button" @click="load">查询</button>
         <a class="btn small secondary" :href="`/api/admin/export?kind=${kind}`">导出 XLSX</a>
       </div>
       <div v-if="loading" class="loading">加载记录…</div>
       <div v-else class="table-scroll">
-        <table class="admin-table">
-          <thead><tr><th v-for="column in columns" :key="column">{{ column }}</th><th v-if="kind === 'orders'">操作</th></tr></thead>
+        <table class="admin-table records-table">
+          <thead><tr><th v-for="column in columns" :key="column.key">{{ column.label }}</th><th v-if="kind === 'orders'">操作</th></tr></thead>
           <tbody>
             <tr v-for="(row, index) in pagedRows" :key="index">
-              <td v-for="column in columns" :key="column">{{ display(row[column]) }}</td>
-              <td v-if="kind === 'orders'" class="row-actions"><button v-for="action in orderActions(row)" :key="action.status" type="button" @click="updateOrder(row, action.status)">{{ action.label }}</button></td>
+              <td v-for="column in columns" :key="column.key">{{ display(column.key, row[column.key]) }}</td>
+              <td v-if="kind === 'orders'" class="row-actions">
+                <button v-for="action in orderActions(row)" :key="action.status" type="button" @click="updateOrder(row, action.status)">{{ action.label }}</button>
+              </td>
             </tr>
           </tbody>
         </table>

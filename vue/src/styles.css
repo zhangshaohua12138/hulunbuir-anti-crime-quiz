@@ -552,3 +552,10 @@ p { line-height: 1.75; }
 .user-id { overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 10px; }
 .users-table .row-actions { flex-wrap: nowrap; white-space: nowrap; }
 .users-table .row-actions button { white-space: nowrap; }
+
+/* Records table readable labels */
+.records-table { min-width: 900px; }
+.records-table th, .records-table td { white-space: nowrap; vertical-align: middle; }
+.records-table td:nth-child(6) { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.records-table .row-actions { flex-wrap: nowrap; }
+.records-table .row-actions button { white-space: nowrap; }
