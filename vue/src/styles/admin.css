@@ -382,3 +382,8 @@
 .user-filter strong { color: var(--ink); }
 .user-filter .filter-clear { margin-left: auto; border: 0; background: transparent; padding: 2px 0; color: var(--primary-dark); font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
 .user-filter .filter-clear:hover { color: var(--ink); }
+
+/* Keep action cells aligned with the other table cells */
+.admin-table td.table-actions { vertical-align: middle; white-space: nowrap; }
+.table-actions .row-actions { display: flex; align-items: center; justify-content: flex-start; gap: 4px; flex-wrap: nowrap; }
+.records-table .table-actions { padding-top: 0; padding-bottom: 0; }

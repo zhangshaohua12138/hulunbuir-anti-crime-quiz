@@ -26,8 +26,8 @@ withDefaults(defineProps<{
               {{ format ? format(column.key, row[column.key]) : (row[column.key] ?? '—') }}
             </slot>
           </td>
-          <td v-if="$slots.actions" class="row-actions">
-            <slot name="actions" :row="row" />
+          <td v-if="$slots.actions" class="table-actions">
+            <div class="row-actions"><slot name="actions" :row="row" /></div>
           </td>
         </tr>
       </tbody>
