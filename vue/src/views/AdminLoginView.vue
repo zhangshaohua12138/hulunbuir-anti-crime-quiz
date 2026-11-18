@@ -28,7 +28,7 @@ async function submit() {
 <template>
   <main class="login-page">
     <section class="login-panel">
-      <div class="eyebrow">VUE ADMIN</div>
+      <div class="eyebrow">管理后台</div>
       <h1>活动管理后台</h1>
       <p class="help">使用超级管理员或运营账号登录，管理活动、题库、奖品和发奖。</p>
       <form @submit.prevent="submit">
