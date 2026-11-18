@@ -658,6 +658,17 @@ class ServerTests(unittest.TestCase):
         self.assertEqual([b['type'] for b in boot['config']['layout']['blocks']],['hero','cta'])
         self.assertEqual(self.request('/api/admin/layout','PUT',{'layout':layout})[0],401)
 
+    def test_custom_component_blocks_roundtrip(self):
+        admin=self.admin()
+        layout={'version':1,'blocks':[{'id':'hero','type':'hero','visible':True,'props':{}},{'id':'search1','type':'custom-search','visible':True,'props':{'placeholder':'查一查','buttonText':'搜索','action':'#/ranking','background':'#ffffff'}}]}
+        saved=self.ok('/api/admin/layout','PUT',{'layout':layout},admin)
+        block=saved['layout']['blocks'][1]
+        self.assertEqual(block['type'],'custom-search')
+        self.assertEqual(block['props']['placeholder'],'查一查')
+        self.assertEqual(block['props']['action'],'#/ranking')
+        bad=dict(layout); bad['blocks']=[{'id':'x','type':'custom-unknown','visible':True,'props':{}}]
+        self.assertEqual(self.request('/api/admin/layout','PUT',{'layout':bad},admin)[0],400)
+
     def test_layout_templates_crud(self):
         admin=self.admin()
         layout={'version':1,'blocks':[{'id':'hero','type':'hero','visible':True,'props':{}}]}

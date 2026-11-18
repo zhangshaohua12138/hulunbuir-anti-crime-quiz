@@ -247,3 +247,20 @@ p { line-height: 1.75; }
 .award-row strong { font-size: 14px; }
 .award-row .help { margin: 4px 0 0; }
 .award-status { flex: none; color: var(--primary-dark); background: var(--primary-soft); padding: 4px 7px; border-radius: 6px; font-size: 11px; }
+
+.custom-text { background: transparent; }
+.custom-text h2 { font-size: 20px; margin: 0 0 8px; }
+.custom-text p { margin: 0; line-height: 1.8; }
+.custom-image-card { width: 100%; }
+.custom-image-card img { display: inline-block; max-width: 100%; vertical-align: middle; }
+.custom-image-card .help { margin: 6px 0 0; }
+.custom-search { display: flex; gap: 8px; padding: 10px; border: 1px solid var(--line); background: var(--card-bg); }
+.custom-search input { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+.custom-search button { border: 0; border-radius: 7px; padding: 0 14px; background: var(--primary); color: var(--btn-text); font-weight: 600; }
+.custom-button-wrap { width: 100%; }
+.custom-button { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 9px 20px; border: 0; border-radius: 10px; background: var(--primary); color: var(--btn-text); font-weight: 650; }
+.custom-divider { border: 0; border-top: 1px solid var(--line); }
+.palette-subtitle { font-size: 11px; color: var(--muted); margin: 16px 0 8px; font-weight: 600; }
+.component-field { display: grid; gap: 4px; margin-top: 9px; font-size: 10px; color: var(--muted); }
+.component-field input:not([type="checkbox"]), .component-field textarea, .component-field select { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 11px; background: #fff; color: var(--ink); }
+.component-field input[type="checkbox"] { justify-self: start; }

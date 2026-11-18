@@ -12,6 +12,24 @@ export const blockDefinitions = [
   { type: 'ranking', label: '榜单预览', hint: '排行榜入口' },
 ] as const
 
+export const customBlockDefinitions = [
+  { type: 'custom-text', label: '自定义文本', hint: '标题、正文、对齐和背景' },
+  { type: 'custom-image', label: '自定义图片', hint: '图片地址、链接、圆角和说明' },
+  { type: 'custom-search', label: '搜索框', hint: '占位文字、按钮和跳转地址' },
+  { type: 'custom-button', label: '自定义按钮', hint: '文案、链接、颜色和宽度' },
+  { type: 'custom-divider', label: '分割线', hint: '颜色和上下间距' },
+] as const
+
+export const customDefaults: Record<string, Record<string, unknown>> = {
+  'custom-text': { title: '自定义标题', body: '这是一段可以自由编辑的正文。', align: 'left', color: '', background: '', padding: '20', radius: '12' },
+  'custom-image': { src: '/static/theme-previews/template-1.png', alt: '活动图片', link: '', align: 'center', width: '100%', radius: '12', caption: '' },
+  'custom-search': { placeholder: '搜索活动内容…', buttonText: '搜索', action: '#/ranking', background: '', color: '', radius: '10' },
+  'custom-button': { label: '了解更多', link: '#/rules', align: 'center', background: '', color: '', radius: '10', full: false },
+  'custom-divider': { color: '', margin: '18' },
+}
+
+export const allBlockDefinitions = [...blockDefinitions, ...customBlockDefinitions] as const
+
 export type BlockDefinition = (typeof blockDefinitions)[number]
 
 export const defaultLayout: PageLayout = {
@@ -68,7 +86,7 @@ export function normalizeLayout(input?: PageLayout | null): PageLayout {
   return {
     version: 1,
     blocks: blocks
-      .filter((block) => blockDefinitions.some((definition) => definition.type === block.type))
+      .filter((block) => allBlockDefinitions.some((definition) => definition.type === block.type))
       .map((block) => ({
         id: block.id || block.type,
         type: block.type,

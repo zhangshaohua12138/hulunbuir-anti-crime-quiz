@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import HomePreview from '../components/HomePreview.vue'
 import { api } from '../api'
-import { blockDefinitions, normalizeLayout, presets, type PageLayout } from '../layout'
+import { allBlockDefinitions, blockDefinitions, customBlockDefinitions, customDefaults, normalizeLayout, presets, type PageLayout } from '../layout'
 import { useSession } from '../store'
 import { applyTheme } from '../theme'
 import type { BlockType, LayoutBlock, LayoutTemplate } from '../types'
@@ -32,9 +32,55 @@ const themeFields = [
 const theme = reactive<Record<string, string | boolean>>({ buttonTextAuto: true })
 
 const boot = computed(() => session.boot)
-const blockLabel = (type: BlockType) => blockDefinitions.find((item) => item.type === type)?.label || type
-const blockHint = (type: BlockType) => blockDefinitions.find((item) => item.type === type)?.hint || ''
+const blockLabel = (type: BlockType) => allBlockDefinitions.find((item) => item.type === type)?.label || type
+const blockHint = (type: BlockType) => allBlockDefinitions.find((item) => item.type === type)?.hint || ''
 const availableBlocks = computed(() => blockDefinitions.filter((definition) => !layout.value.blocks.some((block) => block.type === definition.type)))
+const customFields = computed(() => {
+  const type = selectedBlock.value?.type
+  if (!type || !type.startsWith('custom-')) return []
+  const fields: Record<string, Array<{ key: string; label: string; kind?: string; options?: string[] }>> = {
+    'custom-text': [
+      { key: 'title', label: '标题' },
+      { key: 'body', label: '正文', kind: 'textarea' },
+      { key: 'align', label: '对齐', kind: 'select', options: ['left', 'center', 'right'] },
+      { key: 'color', label: '文字颜色（#RRGGBB）' },
+      { key: 'background', label: '背景颜色（#RRGGBB）' },
+      { key: 'padding', label: '内边距 px' },
+      { key: 'radius', label: '圆角 px' },
+    ],
+    'custom-image': [
+      { key: 'src', label: '图片地址（/static/ 或 https://）' },
+      { key: 'alt', label: '替代文字' },
+      { key: 'link', label: '点击跳转（#/ 或 https://）' },
+      { key: 'caption', label: '图片说明' },
+      { key: 'align', label: '对齐', kind: 'select', options: ['left', 'center', 'right'] },
+      { key: 'width', label: '宽度（例如 100%）' },
+      { key: 'radius', label: '圆角 px' },
+    ],
+    'custom-search': [
+      { key: 'placeholder', label: '占位文字' },
+      { key: 'buttonText', label: '按钮文字' },
+      { key: 'action', label: '跳转地址（#/ranking 或 https://）' },
+      { key: 'background', label: '背景颜色（#RRGGBB）' },
+      { key: 'color', label: '文字颜色（#RRGGBB）' },
+      { key: 'radius', label: '圆角 px' },
+    ],
+    'custom-button': [
+      { key: 'label', label: '按钮文字' },
+      { key: 'link', label: '跳转地址（#/rules 或 https://）' },
+      { key: 'align', label: '对齐', kind: 'select', options: ['left', 'center', 'right'] },
+      { key: 'background', label: '背景颜色（#RRGGBB）' },
+      { key: 'color', label: '文字颜色（#RRGGBB）' },
+      { key: 'radius', label: '圆角 px' },
+      { key: 'full', label: '占满一行', kind: 'checkbox' },
+    ],
+    'custom-divider': [
+      { key: 'color', label: '颜色（#RRGGBB）' },
+      { key: 'margin', label: '上下间距 px' },
+    ],
+  }
+  return fields[type] || []
+})
 const selectedBlock = computed(() => (selectedIndex.value === null ? null : layout.value.blocks[selectedIndex.value] || null))
 
 onMounted(async () => {
@@ -61,6 +107,11 @@ onMounted(async () => {
 function addBlock(type: BlockType) {
   const block: LayoutBlock = { id: `${type}-${Date.now()}`, type, visible: true, props: {} }
   layout.value.blocks.push(block)
+  selectedIndex.value = layout.value.blocks.length - 1
+}
+
+function addCustomBlock(type: BlockType) {
+  layout.value.blocks.push({ id: `${type}-${Date.now()}-${layout.value.blocks.length}`, type, visible: true, props: { ...(customDefaults[type] || {}) } })
   selectedIndex.value = layout.value.blocks.length - 1
 }
 
@@ -225,7 +276,12 @@ async function save() {
             <span>{{ definition.label }}</span>
             <small>{{ definition.hint }}</small>
           </button>
-          <p v-if="!availableBlocks.length" class="help">所有区块都已添加</p>
+          <p v-if="!availableBlocks.length" class="help">所有基础区块都已添加</p>
+          <h3 class="palette-subtitle">自定义组件</h3>
+          <button v-for="definition in customBlockDefinitions" :key="definition.type" class="palette-button" type="button" @click="addCustomBlock(definition.type)">
+            <span>{{ definition.label }}</span>
+            <small>{{ definition.hint }}</small>
+          </button>
         </section>
         <section v-if="selectedBlock">
           <h2>区块设置</h2>
@@ -235,6 +291,15 @@ async function save() {
             显示此区块
           </label>
           <p class="help">{{ blockHint(selectedBlock.type) }}</p>
+          <div v-for="field in customFields" :key="field.key" class="component-field">
+            <label>{{ field.label }}</label>
+            <textarea v-if="field.kind === 'textarea'" v-model="selectedBlock.props[field.key]" rows="3" />
+            <select v-else-if="field.kind === 'select'" v-model="selectedBlock.props[field.key]">
+              <option v-for="option in field.options" :key="option" :value="option">{{ option }}</option>
+            </select>
+            <input v-else-if="field.kind === 'checkbox'" v-model="selectedBlock.props[field.key]" type="checkbox" />
+            <input v-else v-model="selectedBlock.props[field.key]" type="text" />
+          </div>
         </section>
       </aside>
 

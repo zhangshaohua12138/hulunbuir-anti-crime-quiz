@@ -8,6 +8,11 @@ export type BlockType =
   | 'notice'
   | 'features'
   | 'ranking'
+  | 'custom-text'
+  | 'custom-image'
+  | 'custom-search'
+  | 'custom-button'
+  | 'custom-divider'
 
 export interface LayoutBlock {
   id: string

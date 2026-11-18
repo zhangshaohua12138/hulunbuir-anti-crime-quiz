@@ -95,7 +95,28 @@ def verify_password(password, encoded):
     except Exception:
         return False
 
-BLOCK_TYPES={'hero','stats','cta','latest','steps','prizes','notice','features','ranking'}
+BLOCK_TYPES={'hero','stats','cta','latest','steps','prizes','notice','features','ranking','custom-text','custom-image','custom-search','custom-button','custom-divider'}
+CUSTOM_BLOCK_TYPES={'custom-text','custom-image','custom-search','custom-button','custom-divider'}
+CUSTOM_FIELDS={
+ 'custom-text':{'title','body','align','color','background','padding','radius'},
+ 'custom-image':{'src','alt','link','align','radius','width','caption'},
+ 'custom-search':{'placeholder','buttonText','action','background','color','radius'},
+ 'custom-button':{'label','link','align','background','color','radius','full'},
+ 'custom-divider':{'color','margin'},
+}
+def clean_custom_props(kind, props):
+    allowed=CUSTOM_FIELDS[kind]; out={}
+    for key in allowed:
+        value=props.get(key) if isinstance(props,dict) else None
+        if isinstance(value,bool): out[key]=value; continue
+        if isinstance(value,(int,float)): out[key]=str(value); continue
+        if value is None: continue
+        text=clean_text(str(value),1000)
+        if key in {'background','color'} and text and not re.fullmatch(r'#[0-9A-Fa-f]{6}',text): continue
+        if key in {'src','link','action'} and text and not (text.startswith('/static/') or text.startswith('https://') or text.startswith('#/')): continue
+        out[key]=text
+    return out
+
 def clean_layout_block_list(layout):
     if not isinstance(layout,dict): raise Error('布局格式无效')
     blocks=layout.get('blocks',[])
@@ -104,7 +125,7 @@ def clean_layout_block_list(layout):
     for block in blocks:
         if not isinstance(block,dict) or block.get('type') not in BLOCK_TYPES: raise Error('布局区块类型无效')
         if not isinstance(block.get('visible',True),bool) or (block.get('props') is not None and not isinstance(block.get('props'),dict)): raise Error('布局区块格式无效')
-        clean.append({'id':str(block.get('id') or uid())[:40],'type':block['type'],'visible':bool(block.get('visible',True)),'props':block.get('props') if isinstance(block.get('props'),dict) else {}})
+        clean.append({'id':str(block.get('id') or uid())[:40],'type':block['type'],'visible':bool(block.get('visible',True)),'props':clean_custom_props(block['type'],block.get('props')) if block['type'] in CUSTOM_BLOCK_TYPES else (block.get('props') if isinstance(block.get('props'),dict) else {})})
     return {'version':1,'blocks':clean}
 def init_db():
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
@@ -857,7 +878,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(updated.get('layout'),dict): raise Error('布局格式无效')
                 blocks=updated['layout'].get('blocks',[])
                 if not isinstance(blocks,list) or len(blocks)>40: raise Error('布局区块过多')
-                allowed={'hero','stats','cta','latest','steps','prizes','notice','features','ranking'}
+                allowed=BLOCK_TYPES
                 for block in blocks:
                     if not isinstance(block,dict) or block.get('type') not in allowed or not isinstance(block.get('visible',True),bool) or (block.get('props') is not None and not isinstance(block.get('props'),dict)): raise Error('布局区块格式无效')
                 templates=updated.get('layoutTemplates',[])
