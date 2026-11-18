@@ -518,3 +518,12 @@ p { line-height: 1.75; }
   padding: 5px 9px;
   font-size: 10px;
 }
+
+/* Align the four activity setting cards in equal grid rows */
+.settings-grid { align-items: stretch; }
+.settings-card { display: flex; flex-direction: column; height: 100%; width: 100%; min-width: 0; }
+.settings-card .card-fields { flex: 1; align-content: start; }
+.settings-card .card-head { min-height: 72px; }
+.settings-card .card-heading p { min-height: 30px; }
+.settings-card.time-card .card-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.settings-card.time-card input[type="datetime-local"] { font-size: 11px; }

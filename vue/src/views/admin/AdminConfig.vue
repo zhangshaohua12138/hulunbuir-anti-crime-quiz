@@ -7,6 +7,8 @@ const config = ref<Record<string, any> | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 const message = ref('')
+const startLocal = ref('')
+const endLocal = ref('')
 
 const configured = computed(() => Boolean(config.value))
 const stateLabel = computed(() => {
@@ -19,12 +21,26 @@ const stateLabel = computed(() => {
   if (now > end) return '已结束'
   return '进行中'
 })
+function toLocalInput(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function fromLocalInput(value: string) {
+  if (!value) return value
+  return value.length === 16 ? `${value}:00+08:00` : value
+}
+
 const budgetYuan = computed(() => ((Number(config.value?.budgetCents || 0)) / 100).toFixed(2))
 const dailyYuan = computed(() => ((Number(config.value?.dailyBudgetCents || 0)) / 100).toFixed(2))
 
 onMounted(async () => {
   try {
     config.value = await api<Record<string, any>>('/api/admin/config')
+    startLocal.value = toLocalInput(String(config.value.startAt || ''))
+    endLocal.value = toLocalInput(String(config.value.endAt || ''))
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : '读取配置失败'
   } finally {
@@ -37,10 +53,14 @@ async function save() {
   saving.value = true
   message.value = ''
   try {
+    config.value.startAt = fromLocalInput(startLocal.value)
+    config.value.endAt = fromLocalInput(endLocal.value)
     config.value = await api<Record<string, any>>('/api/admin/config', {
       method: 'PUT',
       body: JSON.stringify(config.value),
     })
+    startLocal.value = toLocalInput(String(config.value.startAt || ''))
+    endLocal.value = toLocalInput(String(config.value.endAt || ''))
     message.value = '活动配置已保存'
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : '保存失败'
@@ -76,8 +96,8 @@ async function save() {
           <span class="card-state" :class="{ ok: stateLabel === '进行中' }">{{ stateLabel }}</span>
         </header>
         <div class="card-fields">
-          <label class="wide">开始时间<input v-model="config.startAt" placeholder="2026-11-18T00:00:00+08:00" /></label>
-          <label class="wide">结束时间<input v-model="config.endAt" placeholder="2026-11-24T23:59:59+08:00" /></label>
+          <label>开始时间<input v-model="startLocal" type="datetime-local" /></label>
+          <label>结束时间<input v-model="endLocal" type="datetime-local" /></label>
           <label class="switch-row wide"><input v-model="config.paused" type="checkbox" />暂停活动</label>
         </div>
       </section>
