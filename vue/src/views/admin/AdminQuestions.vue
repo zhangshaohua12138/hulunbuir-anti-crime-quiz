@@ -158,8 +158,9 @@ function answerToggle(id: string) {
       <Pagination :page="page" :pages="pages" :total="total" :page-size="pageSize" @update:page="page = $event; load()" @update:page-size="pageSize = $event; page = 1; load()" />
     </section>
 
-    <form v-if="editing" class="card admin-form question-form" @submit.prevent="save">
-      <h2>{{ form.id ? '编辑题目' : '新增题目' }}</h2>
+    <div v-if="editing" class="modal-mask" @click.self="editing = false">
+    <form class="card modal-panel admin-form question-form" @submit.prevent="save">
+      <div class="modal-head"><h2>{{ form.id ? '编辑题目' : '新增题目' }}</h2><button type="button" class="modal-close" @click="editing = false">×</button></div>
       <div class="form-grid">
         <label>题型<select v-model="form.type"><option value="single">单选</option><option value="multiple">多选</option></select></label>
         <label class="check-row"><input v-model="form.enabled" type="checkbox" />启用</label>
@@ -176,5 +177,6 @@ function answerToggle(id: string) {
         <button class="btn" type="submit">保存题目</button>
       </div>
     </form>
+    </div>
   </AdminShell>
 </template>
