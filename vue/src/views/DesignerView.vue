@@ -17,6 +17,7 @@ const selectedIndex = ref<number | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 const saved = ref('')
+const uploading = ref('')
 const themeFields = [
   { key: 'themeColor', label: '主色' }, { key: 'pageBackground', label: '页面背景' },
   { key: 'cardBackground', label: '卡片背景' }, { key: 'headerBackground', label: '顶部栏' },
@@ -111,6 +112,47 @@ function moveSelected(direction: -1 | 1) {
 
 function removeSelected() {
   if (selectedIndex.value !== null) removeBlock(selectedIndex.value)
+}
+
+async function uploadImage(key: string, event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file || !selectedBlock.value) return
+  uploading.value = key
+  saved.value = '图片上传中…'
+  try {
+    const form = new FormData()
+    form.append('file', file)
+    const result = await api<{ url: string }>('/api/admin/upload', { method: 'POST', body: form })
+    selectedBlock.value.props[key] = result.url
+    saved.value = '图片已上传'
+  } catch (reason) {
+    saved.value = reason instanceof Error ? reason.message : '图片上传失败'
+  } finally {
+    uploading.value = ''
+    input.value = ''
+  }
+}
+
+async function uploadSlide(index: number, event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  uploading.value = `slide-${index}`
+  saved.value = '图片上传中…'
+  try {
+    const form = new FormData()
+    form.append('file', file)
+    const result = await api<{ url: string }>('/api/admin/upload', { method: 'POST', body: form })
+    const slide = currentSlides.value[index]
+    if (slide) slide.src = result.url
+    saved.value = '轮播图片已上传'
+  } catch (reason) {
+    saved.value = reason instanceof Error ? reason.message : '图片上传失败'
+  } finally {
+    uploading.value = ''
+    input.value = ''
+  }
 }
 
 function addSlide() {
@@ -238,6 +280,7 @@ async function saveTheme() {
                 <input v-model="slide.src" placeholder="图片地址" />
                 <input v-model="slide.link" placeholder="点击链接（可空）" />
                 <input v-model="slide.title" placeholder="标题（可空）" />
+                <label class="slide-upload">{{ uploading === `slide-${index}` ? '…' : '上传' }}<input type="file" accept="image/png,image/jpeg,image/webp" :disabled="!!uploading" @change="uploadSlide(index, $event)" /></label>
                 <button type="button" @click="removeSlide(index)">删除</button>
               </div>
               <button type="button" class="btn small secondary" @click="addSlide">＋ 增加一张</button>
@@ -247,6 +290,10 @@ async function saveTheme() {
               <option v-for="option in field.options" :key="option" :value="option">{{ option }}</option>
             </select>
             <input v-else-if="field.kind === 'checkbox'" v-model="selectedBlock.props[field.key]" type="checkbox" />
+            <div v-else-if="field.key === 'src' || field.key === 'image'" class="image-field">
+              <input v-model="selectedBlock.props[field.key]" type="text" />
+              <label class="upload-button">{{ uploading === field.key ? '上传中…' : '上传图片' }}<input type="file" accept="image/png,image/jpeg,image/webp" :disabled="!!uploading" @change="uploadImage(field.key, $event)" /></label>
+            </div>
             <input v-else v-model="selectedBlock.props[field.key]" type="text" />
           </div>
           <p v-if="!customFields.length" class="help">这个基础区块没有额外参数，可在右侧拖动调整顺序。</p>

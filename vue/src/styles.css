@@ -395,3 +395,9 @@ p { line-height: 1.75; }
 .slide-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 4px; }
 .slide-row input { min-width: 0; }
 .slide-row button { border: 1px solid var(--line); border-radius: 5px; background: #fff; color: #b42318; font-size: 9px; padding: 3px 5px; }
+
+.image-field { display: flex; gap: 5px; align-items: center; }
+.image-field input { flex: 1; min-width: 0; }
+.upload-button, .slide-upload { position: relative; overflow: hidden; flex: none; border: 1px solid var(--line); border-radius: 6px; background: var(--primary-soft); color: var(--primary-dark); font-size: 9px; padding: 5px 7px; cursor: pointer; white-space: nowrap; }
+.upload-button input, .slide-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.slide-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) auto auto !important; }
