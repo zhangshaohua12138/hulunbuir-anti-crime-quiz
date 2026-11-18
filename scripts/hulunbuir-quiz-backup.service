@@ -1,0 +1,15 @@
+[Unit]
+Description=Hulunbuir quiz SQLite backup
+After=network.target hulunbuir-quiz.service
+
+[Service]
+Type=oneshot
+User=quiz
+Group=quiz
+Environment=DATABASE_PATH=/var/lib/hulunbuir-quiz/quiz.db
+Environment=BACKUP_DIR=/var/backups/hulunbuir-quiz
+Environment=BACKUP_RETENTION_DAYS=14
+ExecStart=/opt/hulunbuir-quiz/.venv/bin/python /opt/hulunbuir-quiz/scripts/backup.py
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

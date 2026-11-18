@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Hulunbuir quiz health monitor every 5 minutes
+Requires=hulunbuir-quiz-monitor.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -27,6 +27,10 @@ def epoch(s): return datetime.fromisoformat(s.replace('Z','+00:00')).timestamp()
 def day(t=None): return datetime.fromtimestamp(t if t is not None else now(), TZ).strftime('%Y-%m-%d')
 def dumps(x): return json.dumps(x, ensure_ascii=False)
 def uid(): return secrets.token_hex(16)
+class QuizHTTPServer(ThreadingHTTPServer):
+    request_queue_size=128
+    daemon_threads=True
+
 class Error(Exception):
     def __init__(self, message, status=400): self.message, self.status = message, status
 
@@ -470,10 +474,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def route(self,c,cfg,path,query,data):
         method=self.command
-        if path=='/api/health': return {'ok':True,'mode':MODE}
+        if path=='/api/health':
+            c.execute('SELECT 1').fetchone(); return {'ok':True,'mode':MODE,'db':True,'time':int(now())}
         if path=='/api/auth/demo' and method=='POST':
             if MODE!='demo': raise Error('演示登录已关闭',404)
-            name=str(data.get('nickname','体验用户')).strip()[:24] or '体验用户'
+            name=clean_nickname(data.get('nickname','参与者'))
             # 浏览器会话以随机 openid 标识，昵称绝不作为可冒用的身份凭据。
             u={'id':uid(),'openid':'demo-'+uid()}
             is_test=0
@@ -959,5 +964,5 @@ def main():
     threading.Thread(target=worker,daemon=True).start()
     host=os.getenv('HOST','127.0.0.1'); port=int(os.getenv('PORT','8080'))
     print(f'Quiz running: http://{host}:{port} mode={MODE}',flush=True)
-    ThreadingHTTPServer((host,port),Handler).serve_forever()
+    QuizHTTPServer((host,port),Handler).serve_forever()
 if __name__=='__main__': main()

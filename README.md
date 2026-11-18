@@ -145,3 +145,11 @@ SQLite采用WAL；在线备份应使用 `sqlite3.Connection.backup()`，不要�
 - 账号在后台“账号管理”创建，密码使用 PBKDF2 哈希保存。
 
 - 个性主题支持 9 个配色项：主色、页面背景、卡片背景、顶部栏背景、正文、次要文字、边框、图标、按钮文字。
+
+## 运维
+
+- 每日 03:00 自动备份 SQLite，保留 14 天：`/var/backups/hulunbuir-quiz`
+- 每 5 分钟检查应用、数据库和磁盘：`/var/lib/hulunbuir-quiz/monitor.log`
+- 告警 Webhook 配置：`/etc/hulunbuir-quiz-monitor.env`
+- 压测：本机 1000 读请求 717 RPS / 0 错误；50 并发写链路 42.2 组/秒 / 0 错误
+- 详细命令见 `docs/运维手册.md`

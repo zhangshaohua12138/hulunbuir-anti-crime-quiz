@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Hulunbuir quiz SQLite backup
+Requires=hulunbuir-quiz-backup.service
+
+[Timer]
+OnCalendar=*-*-* 19:00:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
