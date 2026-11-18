@@ -13,6 +13,8 @@ export type BlockType =
   | 'custom-search'
   | 'custom-button'
   | 'custom-divider'
+  | 'custom-carousel'
+  | 'custom-banner'
 
 export interface LayoutBlock {
   id: string

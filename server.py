@@ -95,17 +95,33 @@ def verify_password(password, encoded):
     except Exception:
         return False
 
-BLOCK_TYPES={'hero','stats','cta','latest','steps','prizes','notice','features','ranking','custom-text','custom-image','custom-search','custom-button','custom-divider'}
-CUSTOM_BLOCK_TYPES={'custom-text','custom-image','custom-search','custom-button','custom-divider'}
+BLOCK_TYPES={'hero','stats','cta','latest','steps','prizes','notice','features','ranking','custom-text','custom-image','custom-search','custom-button','custom-divider','custom-carousel','custom-banner'}
+CUSTOM_BLOCK_TYPES={'custom-text','custom-image','custom-search','custom-button','custom-divider','custom-carousel','custom-banner'}
 CUSTOM_FIELDS={
  'custom-text':{'title','body','align','color','background','padding','radius'},
  'custom-image':{'src','alt','link','align','radius','width','caption'},
  'custom-search':{'placeholder','buttonText','action','background','color','radius'},
  'custom-button':{'label','link','align','background','color','radius','full'},
  'custom-divider':{'color','margin'},
+ 'custom-carousel':{'slides','height','radius','autoplay'},
+ 'custom-banner':{'image','title','subtitle','buttonText','link','align','color','overlay','height','radius'},
 }
 def clean_custom_props(kind, props):
     allowed=CUSTOM_FIELDS[kind]; out={}
+    if kind=='custom-carousel':
+        slides=props.get('slides') if isinstance(props,dict) else None
+        out['slides']=[]; out['height']='240'; out['radius']='12'; out['autoplay']=True
+        if isinstance(slides,list):
+            for slide in slides[:8]:
+                if not isinstance(slide,dict): continue
+                src=clean_text(slide.get('src'),500); link=clean_text(slide.get('link'),500); title=clean_text(slide.get('title'),80)
+                if not src or not (src.startswith('/static/') or src.startswith('https://')): continue
+                if link and not (link.startswith('/static/') or link.startswith('https://') or link.startswith('#/')): link=''
+                out['slides'].append({'src':src,'link':link,'title':title})
+        for key in ['height','radius']:
+            if str(props.get(key,'')).isdigit(): out[key]=str(props.get(key))
+        out['autoplay']=bool(props.get('autoplay',True))
+        return out
     for key in allowed:
         value=props.get(key) if isinstance(props,dict) else None
         if isinstance(value,bool): out[key]=value; continue
@@ -113,7 +129,7 @@ def clean_custom_props(kind, props):
         if value is None: continue
         text=clean_text(str(value),1000)
         if key in {'background','color'} and text and not re.fullmatch(r'#[0-9A-Fa-f]{6}',text): continue
-        if key in {'src','link','action'} and text and not (text.startswith('/static/') or text.startswith('https://') or text.startswith('#/')): continue
+        if key in {'src','image','link','action'} and text and not (text.startswith('/static/') or text.startswith('https://') or text.startswith('#/')): continue
         out[key]=text
     return out
 

@@ -18,6 +18,8 @@ export const customBlockDefinitions = [
   { type: 'custom-search', label: '搜索框', hint: '占位文字、按钮和跳转地址' },
   { type: 'custom-button', label: '自定义按钮', hint: '文案、链接、颜色和宽度' },
   { type: 'custom-divider', label: '分割线', hint: '颜色和上下间距' },
+  { type: 'custom-carousel', label: '轮播图', hint: '多张图片自动轮播，可带标题和链接' },
+  { type: 'custom-banner', label: 'Banner 图', hint: '背景图上叠加标题、副标题和按钮' },
 ] as const
 
 export const customDefaults: Record<string, Record<string, unknown>> = {
@@ -26,6 +28,8 @@ export const customDefaults: Record<string, Record<string, unknown>> = {
   'custom-search': { placeholder: '搜索活动内容…', buttonText: '搜索', action: '#/ranking', background: '', color: '', radius: '10' },
   'custom-button': { label: '了解更多', link: '#/rules', align: 'center', background: '', color: '', radius: '10', full: false },
   'custom-divider': { color: '', margin: '18' },
+  'custom-carousel': { slides: [{ src: '/static/theme-previews/template-1.png', link: '', title: '活动主视觉' }], height: '240', radius: '12', autoplay: true },
+  'custom-banner': { image: '/static/theme-previews/template-2.png', title: '平安建设，共建共享', subtitle: '让法治精神走进千家万户', buttonText: '了解活动', link: '#/rules', align: 'left', color: '#ffffff', overlay: '0.45', height: '260', radius: '12' },
 }
 
 export const allBlockDefinitions = [...blockDefinitions, ...customBlockDefinitions] as const

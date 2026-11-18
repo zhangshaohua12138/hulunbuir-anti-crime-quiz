@@ -9,6 +9,8 @@ import NoticeBlock from './blocks/NoticeBlock.vue'
 import FeaturesBlock from './blocks/FeaturesBlock.vue'
 import RankingBlock from './blocks/RankingBlock.vue'
 import CustomBlock from './blocks/CustomBlock.vue'
+import CarouselBlock from './blocks/CarouselBlock.vue'
+import BannerBlock from './blocks/BannerBlock.vue'
 import type { BootConfig, BootAccount, Bootstrap, LayoutBlock } from '../types'
 
 defineProps<{
@@ -32,5 +34,7 @@ const emit = defineEmits<{ (event: 'start'): void }>()
   <NoticeBlock v-else-if="block.type === 'notice'" :config="config" />
   <FeaturesBlock v-else-if="block.type === 'features'" />
   <RankingBlock v-else-if="block.type === 'ranking'" />
+  <CarouselBlock v-else-if="block.type === 'custom-carousel'" :block="block" />
+  <BannerBlock v-else-if="block.type === 'custom-banner'" :block="block" />
   <CustomBlock v-else-if="block.type.startsWith('custom-')" :block="block" />
 </template>

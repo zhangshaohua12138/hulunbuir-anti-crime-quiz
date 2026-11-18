@@ -669,6 +669,18 @@ class ServerTests(unittest.TestCase):
         bad=dict(layout); bad['blocks']=[{'id':'x','type':'custom-unknown','visible':True,'props':{}}]
         self.assertEqual(self.request('/api/admin/layout','PUT',{'layout':bad},admin)[0],400)
 
+    def test_carousel_and_banner_blocks(self):
+        admin=self.admin()
+        layout={'version':1,'blocks':[
+            {'id':'hero','type':'hero','visible':True,'props':{}},
+            {'id':'carousel','type':'custom-carousel','visible':True,'props':{'slides':[{'src':'/static/theme-previews/template-1.png','link':'#/rules','title':'第一张'}],'height':'260'}},
+            {'id':'banner','type':'custom-banner','visible':True,'props':{'image':'/static/theme-previews/template-2.png','title':'标题','subtitle':'副标题','buttonText':'了解','link':'#/rules','overlay':'0.6'}},
+        ]}
+        saved=self.ok('/api/admin/layout','PUT',{'layout':layout},admin)
+        blocks={b['type']:b for b in saved['layout']['blocks']}
+        self.assertEqual(blocks['custom-carousel']['props']['slides'][0]['title'],'第一张')
+        self.assertEqual(blocks['custom-banner']['props']['title'],'标题')
+
     def test_layout_templates_crud(self):
         admin=self.admin()
         layout={'version':1,'blocks':[{'id':'hero','type':'hero','visible':True,'props':{}}]}

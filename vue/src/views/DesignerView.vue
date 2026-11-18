@@ -28,6 +28,10 @@ const theme = reactive<Record<string, string | boolean>>({ buttonTextAuto: true 
 
 const boot = computed(() => session.boot)
 const selectedBlock = computed(() => (selectedIndex.value === null ? null : layout.value.blocks[selectedIndex.value] || null))
+const currentSlides = computed(() => {
+  const value = selectedBlock.value?.props?.slides
+  return Array.isArray(value) ? value as Array<Record<string, string>> : []
+})
 const hiddenBlocks = computed(() => layout.value.blocks.map((block, index) => ({ block, index })).filter((item) => !item.block.visible))
 const availableBlocks = computed(() => blockDefinitions.filter((definition) => !layout.value.blocks.some((block) => block.type === definition.type)))
 const blockLabel = (type: BlockType) => allBlockDefinitions.find((item) => item.type === type)?.label || type
@@ -42,6 +46,8 @@ const customFields = computed(() => {
     'custom-search': [{ key: 'placeholder', label: '占位文字' }, { key: 'buttonText', label: '按钮文字' }, { key: 'action', label: '跳转地址（#/ranking 或 https://）' }, { key: 'background', label: '背景颜色（#RRGGBB）' }, { key: 'color', label: '文字颜色（#RRGGBB）' }, { key: 'radius', label: '圆角 px' }],
     'custom-button': [{ key: 'label', label: '按钮文字' }, { key: 'link', label: '跳转地址（#/rules 或 https://）' }, { key: 'align', label: '对齐', kind: 'select', options: ['left', 'center', 'right'] }, { key: 'background', label: '背景颜色（#RRGGBB）' }, { key: 'color', label: '文字颜色（#RRGGBB）' }, { key: 'radius', label: '圆角 px' }, { key: 'full', label: '占满一行', kind: 'checkbox' }],
     'custom-divider': [{ key: 'color', label: '颜色（#RRGGBB）' }, { key: 'margin', label: '上下间距 px' }],
+    'custom-carousel': [{ key: 'slides', label: '轮播图片', kind: 'slides' }, { key: 'height', label: '高度 px' }, { key: 'radius', label: '圆角 px' }, { key: 'autoplay', label: '自动轮播', kind: 'checkbox' }],
+    'custom-banner': [{ key: 'image', label: '背景图地址（/static/ 或 https://）' }, { key: 'title', label: '标题' }, { key: 'subtitle', label: '副标题', kind: 'textarea' }, { key: 'buttonText', label: '按钮文字' }, { key: 'link', label: '按钮链接（#/ 或 https://）' }, { key: 'align', label: '文字对齐', kind: 'select', options: ['left', 'center', 'right'] }, { key: 'color', label: '文字颜色（#RRGGBB）' }, { key: 'overlay', label: '遮罩透明度（0-1）' }, { key: 'height', label: '高度 px' }, { key: 'radius', label: '圆角 px' }],
   }
   return fields[type] || []
 })
@@ -105,6 +111,20 @@ function moveSelected(direction: -1 | 1) {
 
 function removeSelected() {
   if (selectedIndex.value !== null) removeBlock(selectedIndex.value)
+}
+
+function addSlide() {
+  if (!selectedBlock.value) return
+  const slides = Array.isArray(selectedBlock.value.props.slides) ? selectedBlock.value.props.slides : []
+  slides.push({ src: '/static/theme-previews/template-1.png', link: '', title: '新轮播图' })
+  selectedBlock.value.props.slides = slides
+}
+
+function removeSlide(index: number) {
+  if (!selectedBlock.value) return
+  const slides = Array.isArray(selectedBlock.value.props.slides) ? selectedBlock.value.props.slides : []
+  slides.splice(index, 1)
+  selectedBlock.value.props.slides = slides
 }
 
 function choose(index: number) {
@@ -213,7 +233,16 @@ async function saveTheme() {
           </div>
           <div v-for="field in customFields" :key="field.key" class="component-field">
             <label>{{ field.label }}</label>
-            <textarea v-if="field.kind === 'textarea'" v-model="selectedBlock.props[field.key]" rows="3" />
+            <div v-if="field.kind === 'slides'" class="slide-editor">
+              <div v-for="(slide, index) in currentSlides" :key="index" class="slide-row">
+                <input v-model="slide.src" placeholder="图片地址" />
+                <input v-model="slide.link" placeholder="点击链接（可空）" />
+                <input v-model="slide.title" placeholder="标题（可空）" />
+                <button type="button" @click="removeSlide(index)">删除</button>
+              </div>
+              <button type="button" class="btn small secondary" @click="addSlide">＋ 增加一张</button>
+            </div>
+            <textarea v-else-if="field.kind === 'textarea'" v-model="selectedBlock.props[field.key]" rows="3" />
             <select v-else-if="field.kind === 'select'" v-model="selectedBlock.props[field.key]">
               <option v-for="option in field.options" :key="option" :value="option">{{ option }}</option>
             </select>

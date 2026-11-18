@@ -378,3 +378,20 @@ p { line-height: 1.75; }
 .preview-phone .steps { gap: 4px; }
 .preview-phone .step { font-size: 9px; padding: 5px 7px; }
 @media (max-width: 900px) { .designer-layout { grid-template-columns: 1fr; padding: 12px; } .designer-side { position: static; max-height: none; } .preview-phone { height: 600px; } }
+
+.carousel { position: relative; overflow: hidden; background: #dfe8f3; }
+.carousel-slide { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 18px; background-size: cover; background-position: center; color: #fff; text-decoration: none; }
+.carousel-slide::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,.55)); }
+.carousel-slide span { position: relative; z-index: 1; font-size: 16px; font-weight: 700; }
+.carousel-dots { position: absolute; left: 0; right: 0; bottom: 8px; z-index: 2; display: flex; justify-content: center; gap: 5px; }
+.carousel-dots button { width: 6px; height: 6px; padding: 0; border-radius: 50%; border: 0; background: #ffffff80; }
+.carousel-dots button.active { background: #fff; width: 16px; border-radius: 4px; }
+.banner { position: relative; display: flex; align-items: center; padding: 28px; background-size: cover; background-position: center; overflow: hidden; }
+.banner-copy { position: relative; z-index: 1; max-width: 70%; }
+.banner h2 { font-size: 26px; margin: 0 0 8px; color: inherit; }
+.banner p { margin: 0 0 14px; color: inherit; opacity: .9; line-height: 1.7; }
+.banner-button { display: inline-flex; padding: 8px 14px; border: 1px solid #ffffff99; border-radius: 8px; color: inherit; font-size: 12px; text-decoration: none; background: #ffffff17; }
+.slide-editor { display: grid; gap: 8px; }
+.slide-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 4px; }
+.slide-row input { min-width: 0; }
+.slide-row button { border: 1px solid var(--line); border-radius: 5px; background: #fff; color: #b42318; font-size: 9px; padding: 3px 5px; }
