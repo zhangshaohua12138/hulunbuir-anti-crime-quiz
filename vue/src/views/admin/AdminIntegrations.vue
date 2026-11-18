@@ -32,7 +32,8 @@ const loading = ref(true)
 const saving = ref(false)
 const message = ref('')
 
-const providerLabel = computed(() => ({ demo: '演示模式', wechat_transfer: '商家转账', wechat_redpack: '现金红包', gateway: '支付网关' }[form.paymentProvider] || form.paymentProvider))
+const providerLabel = computed(() => ({ demo: '演示模式', wechat_transfer: '商家转账', wechat_redpack: '现金红包', gateway: '支付网关' }[form.paymentProvider] || form.paymentProvider || '未设置'))
+const configuredCount = computed(() => [meta.value?.hasWechatAppSecret, meta.value?.hasWechatPayKey, meta.value?.hasWechatApiV3Key].filter(Boolean).length)
 
 onMounted(async () => {
   try {
@@ -74,80 +75,98 @@ async function save() {
 </script>
 
 <template>
-  <AdminShell active="integrations" title="微信配置" subtitle="按公众号、支付、商家转账、红包文案和证书分类维护。">
+  <AdminShell active="integrations" title="微信配置" subtitle="公众号、支付、商家转账、红包文案和证书的集中配置。">
     <p v-if="message" class="notice-bar">{{ message }}</p>
+
+    <section class="wechat-overview">
+      <div>
+        <div class="eyebrow">WECHAT CONFIG</div>
+        <h2>微信能力配置</h2>
+        <p class="help">敏感密钥不会回显；留空表示保持原值。</p>
+      </div>
+      <div class="overview-chips">
+        <span class="overview-chip" :class="{ ok: meta?.hasWechatAppSecret }">公众号 {{ meta?.hasWechatAppSecret ? '已连接' : '待配置' }}</span>
+        <span class="overview-chip" :class="{ ok: meta?.hasWechatPayKey }">支付 {{ meta?.hasWechatPayKey ? '已配置' : '待配置' }}</span>
+        <span class="overview-chip" :class="{ ok: meta?.hasWechatApiV3Key }">APIv3 {{ meta?.hasWechatApiV3Key ? '已配置' : '待配置' }}</span>
+        <span class="overview-chip accent">{{ providerLabel }}</span>
+      </div>
+    </section>
+
     <div v-if="loading" class="loading">读取配置…</div>
-    <form v-else class="integration-form" @submit.prevent="save">
-      <section class="card integration-section">
-        <div class="integration-head">
-          <div><h2>公众号</h2><p class="help">网页授权、关注校验和 JS-SDK 分享。</p></div>
-          <span class="integration-badge">{{ meta?.hasWechatAppSecret ? 'AppSecret 已配置' : 'AppSecret 未配置' }}</span>
-        </div>
-        <div class="form-grid">
+    <form v-else class="integration-grid" @submit.prevent="save">
+      <section class="integration-card wechat-mp">
+        <header class="card-head">
+          <span class="card-icon">公</span>
+          <div class="card-heading"><h2>公众号</h2><p>网页授权、关注校验和 JS-SDK 分享</p></div>
+          <span class="card-state" :class="{ ok: meta?.hasWechatAppSecret }">{{ meta?.hasWechatAppSecret ? '已连接' : '待配置' }}</span>
+        </header>
+        <div class="card-fields">
           <label>公众号 AppID<input v-model="form.wechatAppId" placeholder="wx..." /></label>
           <label>公众号 AppSecret<input v-model="form.wechatAppSecret" type="password" placeholder="留空不修改" /></label>
-          <label class="span-2">OAuth 回调地址<input :value="meta?.callbackUrl" readonly /></label>
+          <label class="wide">OAuth 回调地址<input :value="meta?.callbackUrl" readonly /></label>
         </div>
       </section>
 
-      <section class="card integration-section">
-        <div class="integration-head">
-          <div><h2>商户与支付</h2><p class="help">商户号、支付模式和接口密钥。</p></div>
-          <span class="integration-badge">{{ providerLabel }}</span>
-        </div>
-        <div class="form-grid">
+      <section class="integration-card wechat-pay">
+        <header class="card-head">
+          <span class="card-icon">付</span>
+          <div class="card-heading"><h2>商户与支付</h2><p>商户号、支付产品和接口密钥</p></div>
+          <span class="card-state" :class="{ ok: configuredCount >= 2 }">{{ providerLabel }}</span>
+        </header>
+        <div class="card-fields">
           <label>商户号<input v-model="form.wechatMchId" placeholder="商户号" /></label>
           <label>发红包方式<select v-model="form.paymentProvider"><option value="demo">演示</option><option value="wechat_transfer">商家转账</option><option value="wechat_redpack">现金红包</option><option value="gateway">支付网关</option></select></label>
           <label>支付 API 密钥<input v-model="form.wechatPayKey" type="password" placeholder="留空不修改" /></label>
           <label>APIv3 密钥<input v-model="form.wechatApiV3Key" type="password" placeholder="留空不修改" /></label>
-          <label>商户调用 IP<input v-model="form.wechatClientIp" placeholder="服务器公网 IP" /></label>
+          <label class="wide">商户调用 IP<input v-model="form.wechatClientIp" placeholder="服务器公网 IP" /></label>
         </div>
-        <div class="integration-status">
-          <span>支付密钥 {{ meta?.hasWechatPayKey ? '已配置' : '未配置' }}</span>
-          <span>APIv3 {{ meta?.hasWechatApiV3Key ? '已配置' : '未配置' }}</span>
-        </div>
+        <div class="card-foot"><span>支付密钥 {{ meta?.hasWechatPayKey ? '✓' : '—' }}</span><span>APIv3 {{ meta?.hasWechatApiV3Key ? '✓' : '—' }}</span></div>
       </section>
 
-      <section class="card integration-section">
-        <div class="integration-head">
-          <div><h2>商家转账</h2><p class="help">商家转账场景、收款样式和用户提示。</p></div>
-          <span class="integration-badge">场景 {{ form.wechatTransferSceneId || '—' }}</span>
-        </div>
-        <div class="form-grid">
+      <section class="integration-card wechat-transfer wide-card">
+        <header class="card-head">
+          <span class="card-icon">转</span>
+          <div class="card-heading"><h2>商家转账</h2><p>转账场景、用户收款样式和奖励说明</p></div>
+          <span class="card-state">场景 {{ form.wechatTransferSceneId || '—' }}</span>
+        </header>
+        <div class="card-fields three">
           <label>转账场景 ID<input v-model="form.wechatTransferSceneId" placeholder="1000" /></label>
           <label>场景信息类型<input v-model="form.wechatTransferSceneInfoType" maxlength="32" /></label>
-          <label class="span-2">场景信息内容<input v-model="form.wechatTransferSceneInfoContent" maxlength="32" /></label>
           <label>奖励说明<input v-model="form.wechatTransferSceneReward" maxlength="32" /></label>
+          <label class="wide">场景信息内容<input v-model="form.wechatTransferSceneInfoContent" maxlength="32" /></label>
           <label>转账备注<input v-model="form.wechatTransferRemark" maxlength="32" /></label>
           <label>用户收款感知<input v-model="form.wechatUserRecvPerception" maxlength="32" /></label>
           <label>收款样式<select v-model="form.wechatUserRecvStyle"><option value="RED_PACKET">红包</option><option value="CONFIRM_PAGE">确认页</option></select></label>
         </div>
       </section>
 
-      <section class="card integration-section">
-        <div class="integration-head">
-          <div><h2>红包文案</h2><p class="help">现金红包和活动展示文案。</p></div>
-          <span class="integration-badge">发送名称 / 活动名称</span>
-        </div>
-        <div class="form-grid">
+      <section class="integration-card wechat-copy">
+        <header class="card-head">
+          <span class="card-icon">礼</span>
+          <div class="card-heading"><h2>红包文案</h2><p>发送名称、活动名称和祝福语</p></div>
+          <span class="card-state accent">展示文案</span>
+        </header>
+        <div class="card-fields">
           <label>红包发送名称<input v-model="form.wechatSendName" maxlength="32" /></label>
           <label>活动名称<input v-model="form.wechatActName" maxlength="32" /></label>
-          <label class="span-2">红包祝福语<input v-model="form.wechatWishing" maxlength="100" /></label>
+          <label class="wide">红包祝福语<input v-model="form.wechatWishing" maxlength="100" /></label>
         </div>
       </section>
 
-      <section class="card integration-section">
-        <div class="integration-head">
-          <div><h2>证书与网络</h2><p class="help">双向证书路径，仅超级管理员可修改。</p></div>
-          <span class="integration-badge">服务器路径</span>
-        </div>
-        <div class="form-grid">
+      <section class="integration-card wechat-cert">
+        <header class="card-head">
+          <span class="card-icon">证</span>
+          <div class="card-heading"><h2>证书与网络</h2><p>双向证书路径，仅超级管理员可修改</p></div>
+          <span class="card-state">服务器路径</span>
+        </header>
+        <div class="card-fields">
           <label>证书路径<input v-model="form.wechatCertPath" placeholder="/etc/hulunbuir-quiz/wechat/apiclient_cert.pem" /></label>
           <label>私钥路径<input v-model="form.wechatKeyPath" placeholder="/etc/hulunbuir-quiz/wechat/apiclient_key.pem" /></label>
         </div>
       </section>
 
-      <div class="integration-actions">
+      <div class="integration-save">
+        <div><strong>保存后立即生效</strong><p class="help">支付模式、密钥和证书会影响真实发奖，请确认后再保存。</p></div>
         <button class="btn" type="submit" :disabled="saving">{{ saving ? '保存中…' : '保存微信配置' }}</button>
       </div>
     </form>
