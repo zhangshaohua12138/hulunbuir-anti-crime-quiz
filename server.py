@@ -92,8 +92,12 @@ def init_db():
             if column not in {r['name'] for r in c.execute(f'PRAGMA table_info({table})')}: c.execute(ddl)
         if not one(c,'SELECT * FROM settings WHERE key="config"'):
             start=datetime.now(TZ).replace(hour=0,minute=0,second=0,microsecond=0)
-            cfg=dict(title='呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动',organizer='中共呼伦贝尔市委政法委员会',startAt=start.isoformat(),endAt=(start+timedelta(days=7)).isoformat(),dailyFree=1,reviveLimit=1,passScore=80,timeLimitSeconds=1200,resumeSeconds=1200,showAnswers=False,leaderboardLimit=100,winnerCount=50,shareMode='manual',shareUrl='',followUrl='',awardDescription='积分前50名话费奖励：第1—10名每人300元，第11—30名每人150元，第31—50名每人100元；活动结束后填写手机号，统一发放。',countFailed=True,countRevived=True,dedupDays=1,shuffleOptions=True,dailyWinLimit=1,totalWinLimit=3,budgetCents=100000,dailyBudgetCents=20000,paused=False,confirmations={f'Q-{i:02}':False for i in range(1,14)},productionConfirmed=False)
+            cfg=dict(title='呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动',organizer='中共呼伦贝尔市委政法委员会',brandSubtitle='全民参与 · 共建平安',shareDesc='学到知识，守护平安家园',startAt=start.isoformat(),endAt=(start+timedelta(days=7)).isoformat(),dailyFree=1,reviveLimit=1,passScore=80,timeLimitSeconds=1200,resumeSeconds=1200,showAnswers=False,leaderboardLimit=100,winnerCount=50,shareMode='manual',shareUrl='',followUrl='',awardDescription='积分前50名话费奖励：第1—10名每人300元，第11—30名每人150元，第31—50名每人100元；活动结束后填写手机号，统一发放。',countFailed=True,countRevived=True,dedupDays=1,shuffleOptions=True,dailyWinLimit=1,totalWinLimit=3,budgetCents=100000,dailyBudgetCents=20000,paused=False,confirmations={f'Q-{i:02}':False for i in range(1,14)},productionConfirmed=False)
             c.execute('INSERT INTO settings VALUES("config",?)',(dumps(cfg),))
+        current=config(c)
+        for k,v in [('brandSubtitle','全民参与 · 共建平安'),('shareDesc','学到知识，守护平安家园')]:
+            if k not in current: current[k]=v
+        saveconfig(c,current)
         if MODE=='demo' and not one(c,'SELECT id FROM questions LIMIT 1'):
             for typ in ['single','multiple']:
                 for i in range(30):
@@ -123,6 +127,11 @@ def ranking_rows(c):
     return rows
 
 def freeze(c,cfg,force=False):
+    hold=one(c,'SELECT value FROM settings WHERE key="unfrozen"')
+    if not force and hold:
+        try:
+            if now()-epoch(hold['value'])<86400: return
+        except Exception: pass
     if (not force and state(cfg)!='ended') or one(c,'SELECT key FROM settings WHERE key="frozen"'): return
     for r in ranking_rows(c):
         c.execute('INSERT INTO ranking VALUES(?,?,?,?,?)',(r['user_id'],r['rank'],r['nickname'],r['points'],r['totalSeconds']))
@@ -192,6 +201,26 @@ def validate_question(q):
     if not isinstance(answers,list) or len(set(answers))!=len(answers) or any(x not in ids for x in answers) or (len(answers)!=1 if q['type']=='single' else len(answers)<2): raise Error('正确答案不完整')
     return dict(id=q.get('id') or uid(),type=q['type'],stem=q['stem'].strip(),options=opts,answers=answers,explanation=str(q.get('explanation','')),enabled=bool(q.get('enabled',True)))
 
+def reset_activity(c):
+    counts={}
+    for table in ['orders','draws','attempts','revives','ranking','oauth_states']:
+        counts[table]=c.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
+        c.execute(f'DELETE FROM {table}')
+    counts['users']=c.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    c.execute('DELETE FROM users')
+    c.execute('DELETE FROM sessions WHERE user_id IS NOT NULL')
+    c.execute('DELETE FROM settings WHERE key="frozen"')
+    c.execute('INSERT OR REPLACE INTO settings VALUES("unfrozen",?)',(iso(now()),))
+    c.execute('DELETE FROM audit')
+    audit(c,'activity.reset',counts)
+    return counts
+
+def unfreeze_activity(c):
+    c.execute('DELETE FROM settings WHERE key="frozen"')
+    c.execute('INSERT OR REPLACE INTO settings VALUES("unfrozen",?)',(iso(now()),))
+    c.execute('DELETE FROM ranking')
+    c.execute("DELETE FROM orders WHERE source='ranking'")
+    audit(c,'activity.unfreeze',{})
 def readiness(c,cfg):
     checks=[]
     i=integrations(c)
@@ -636,8 +665,14 @@ class Handler(BaseHTTPRequestHandler):
             return {'ok':True,'id':target['id'],'is_test':int(enabled)}
         if path=='/api/admin/dashboard':
             counts={r['type']:r['n'] for r in allrows(c,'SELECT type,COUNT(*) n FROM questions WHERE enabled=1 GROUP BY type')}
-            return dict(mode=MODE,stats=dict(users=c.execute('SELECT COUNT(*) FROM users').fetchone()[0],attempts=c.execute("SELECT COUNT(*) FROM attempts WHERE status='submitted'").fetchone()[0],passed=c.execute('SELECT COUNT(*) FROM attempts WHERE passed=1').fetchone()[0],orders=c.execute('SELECT COUNT(*) FROM orders').fetchone()[0],spentCents=c.execute('SELECT COALESCE(SUM(amountCents),0) FROM orders').fetchone()[0]),warnings=[f'{"单选" if t=="single" else "多选"}题可用数量{counts.get(t,0)}，建议补充' for t in ['single','multiple'] if counts.get(t,0)<50],pendingConfirmations=[k for k,v in cfg['confirmations'].items() if not v])
+            return dict(mode=MODE,frozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')),stats=dict(users=c.execute('SELECT COUNT(*) FROM users').fetchone()[0],attempts=c.execute("SELECT COUNT(*) FROM attempts WHERE status='submitted'").fetchone()[0],passed=c.execute('SELECT COUNT(*) FROM attempts WHERE passed=1').fetchone()[0],orders=c.execute('SELECT COUNT(*) FROM orders').fetchone()[0],spentCents=c.execute('SELECT COALESCE(SUM(amountCents),0) FROM orders').fetchone()[0]),warnings=[f'{"单选" if t=="single" else "多选"}题可用数量{counts.get(t,0)}，建议补充' for t in ['single','multiple'] if counts.get(t,0)<50],pendingConfirmations=[k for k,v in cfg['confirmations'].items() if not v])
         if path=='/api/admin/readiness': return readiness(c,cfg)
+        if path=='/api/admin/reset' and method=='POST':
+            if not hmac.compare_digest(str(data.get('password','')),os.getenv('ADMIN_PASSWORD','')): raise Error('管理员密码错误',403)
+            if str(data.get('confirm','')).strip()!='RESET': raise Error('请输入 RESET 确认',400)
+            counts=reset_activity(c); return {'ok':True,'counts':counts}
+        if path=='/api/admin/unfreeze' and method=='POST':
+            unfreeze_activity(c); return {'ok':True,'frozen':False}
         if path=='/api/admin/integrations':
             if method=='GET': return public_integrations(c)
             if method!='PUT': raise Error('不支持的方法',405)
@@ -682,12 +717,12 @@ class Handler(BaseHTTPRequestHandler):
                     if type(updated[k]) is not bool: raise Error(k+'须为布尔值')
                 if updated['shareMode'] not in ['manual','sdk','disabled','free']: raise Error('复活模式无效')
                 if set(updated['confirmations'])!={f'Q-{i:02}' for i in range(1,14)} or any(type(v) is not bool for v in updated['confirmations'].values()): raise Error('确认清单不完整')
-                for k in ['title','organizer','shareUrl','followUrl','awardDescription']:
+                for k in ['title','organizer','brandSubtitle','shareDesc','shareUrl','followUrl','awardDescription']:
                     if not isinstance(updated[k],str) or len(updated[k])>2000: raise Error('文案过长')
                 for k in ['shareUrl','followUrl']:
                     if updated[k] and not updated[k].startswith('https://'): raise Error('公众号链接须使用https')
                 if one(c,'SELECT key FROM settings WHERE key="frozen"') and any(updated[k]!=cfg[k] for k in ['startAt','endAt','winnerCount','awardDescription','countFailed','countRevived']): raise Error('活动已封榜，不能修改结算参数')
-                saveconfig(c,updated); audit(c,'config.update',list(data)); return updated
+                saveconfig(c,updated); c.execute('DELETE FROM settings WHERE key="unfrozen"'); audit(c,'config.update',list(data)); return updated
             return cfg
         if path=='/api/admin/freeze' and method=='POST':
             if state(cfg)!='ended': raise Error('活动结束后才能封榜')

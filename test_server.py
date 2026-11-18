@@ -612,6 +612,24 @@ class ServerTests(unittest.TestCase):
             status,body,_=self.request('/api/attempts/start','POST',{},user)
             self.assertEqual(status,403,body)
 
+    def test_admin_can_unfreeze_and_reset_activity(self):
+        user=self.login('重置测试'); attempt=self.start(user); self.submit(user,attempt)
+        admin=self.admin()
+        self.configure(endAt=server.iso(self.clock-1))
+        self.ok('/api/admin/freeze','POST',{},admin)
+        self.assertTrue(self.ok('/api/bootstrap',cookie=user)['rankingFrozen'])
+        self.ok('/api/admin/unfreeze','POST',{},admin)
+        self.assertFalse(self.ok('/api/bootstrap',cookie=user)['rankingFrozen'])
+        self.assertEqual(self.sql('SELECT COUNT(*) n FROM ranking')[0]['n'],0)
+        self.assertGreaterEqual(self.sql('SELECT COUNT(*) n FROM users')[0]['n'],1)
+        self.assertEqual(self.request('/api/admin/reset','POST',{'password':'wrong','confirm':'RESET'},admin)[0],403)
+        result=self.ok('/api/admin/reset','POST',{'password':'test-admin-password','confirm':'RESET'},admin)
+        self.assertTrue(result['ok'])
+        self.assertEqual(self.sql('SELECT COUNT(*) n FROM users')[0]['n'],0)
+        self.assertGreater(self.sql('SELECT COUNT(*) n FROM questions')[0]['n'],0)
+        self.assertGreater(self.sql('SELECT COUNT(*) n FROM prizes')[0]['n'],0)
+        self.assertTrue(self.sql("SELECT value FROM settings WHERE key='config'"))
+
     def test_admin_user_directory_is_read_only(self):
         user=self.login('UserA')
         attempt=self.start(user); self.submit(user,attempt)
