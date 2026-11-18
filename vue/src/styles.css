@@ -285,3 +285,10 @@ p { line-height: 1.75; }
 .claim-panel label { display: grid; gap: 5px; font-size: 12px; color: var(--muted); }
 .claim-panel input { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; }
 .claim-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+
+.follow-mask { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 20px; background: rgba(8,18,32,.62); }
+.follow-panel { width: min(390px,100%); display: grid; gap: 10px; justify-items: center; text-align: center; padding: 26px; }
+.follow-panel h2 { margin: 0; }
+.follow-panel .help { margin: 0; }
+.follow-qr { width: 210px; max-width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+.follow-panel .text-link { border: 0; background: transparent; cursor: pointer; }

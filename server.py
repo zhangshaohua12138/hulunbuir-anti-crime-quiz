@@ -145,7 +145,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY,draw_id TEXT UNIQUE,user_id TEXT,prize_id TEXT,prize_name TEXT,type TEXT,amountCents INTEGER,created REAL,day TEXT,status TEXT,recipient TEXT DEFAULT '{}',tracking TEXT DEFAULT '',failure TEXT DEFAULT '',tries INTEGER DEFAULT 0,provider_id TEXT DEFAULT '',package_info TEXT DEFAULT '',transfer_state TEXT DEFAULT '',source TEXT DEFAULT 'lottery');
         CREATE TABLE IF NOT EXISTS ranking(user_id TEXT PRIMARY KEY,rank INTEGER,nickname TEXT,points INTEGER,totalSeconds INTEGER);
         CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY AUTOINCREMENT,created REAL,action TEXT,detail TEXT);
-        CREATE TABLE IF NOT EXISTS oauth_states(state TEXT PRIMARY KEY,expires REAL);
+        CREATE TABLE IF NOT EXISTS oauth_states(state TEXT PRIMARY KEY,expires REAL,next TEXT DEFAULT '/');
         ''')
         # 旧库平滑升级：SQLite 增加列；新库 CREATE TABLE 已包含。
         for table,column,ddl in [('sessions','admin_user_id',"ALTER TABLE sessions ADD COLUMN admin_user_id TEXT DEFAULT ''"),('sessions','admin_role',"ALTER TABLE sessions ADD COLUMN admin_role TEXT DEFAULT ''"),('users','bonus_points','ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0'),('users','is_test','ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'),('users','avatar',"ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''"),('orders','package_info',"ALTER TABLE orders ADD COLUMN package_info TEXT DEFAULT ''"),('orders','transfer_state',"ALTER TABLE orders ADD COLUMN transfer_state TEXT DEFAULT ''"),('prizes','points','ALTER TABLE prizes ADD COLUMN points INTEGER DEFAULT 0')]:
@@ -528,13 +528,18 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/auth/wechat':
             i=integrations(c)
             if not i['wechatAppId'] or not os.getenv('PUBLIC_URL'): raise Error('请先配置微信公众号',503)
-            nonce=uid(); c.execute('INSERT INTO oauth_states VALUES(?,?)',(nonce,now()+600))
+            nonce=uid(); next_path=str(query.get('next',['/'])[0] or '/')
+            if not next_path.startswith('/') or next_path.startswith('//'): next_path='/'
+            next_path=next_path[:300]
+            c.execute('INSERT INTO oauth_states(state,expires,next) VALUES(?,?,?)',(nonce,now()+600,next_path))
             callback=os.environ['PUBLIC_URL'].rstrip('/')+'/api/auth/callback'
             url='https://open.weixin.qq.com/connect/oauth2/authorize?'+urllib.parse.urlencode(dict(appid=i['wechatAppId'],redirect_uri=callback,response_type='code',scope='snsapi_userinfo',state=nonce))+'#wechat_redirect'
             return ('',302,'text/plain',{'Location':url,'Set-Cookie':'oauth_state='+nonce+'; HttpOnly; SameSite=Lax; Path=/; Max-Age=600'+('; Secure' if MODE=='production' else '')})
         if path=='/api/auth/callback':
             nonce=query.get('state',[''])[0]; ck=SimpleCookie(); ck.load(self.headers.get('Cookie',''))
-            if not ck.get('oauth_state') or not hmac.compare_digest(ck['oauth_state'].value,nonce) or not one(c,'SELECT * FROM oauth_states WHERE state=? AND expires>?',(nonce,now())): raise Error('授权状态已失效',403)
+            state_row=one(c,'SELECT * FROM oauth_states WHERE state=? AND expires>?',(nonce,now()))
+            if not ck.get('oauth_state') or not hmac.compare_digest(ck['oauth_state'].value,nonce) or not state_row: raise Error('授权状态已失效',403)
+            next_path=(state_row.get('next') or '/') if isinstance(state_row,dict) else '/'
             c.execute('DELETE FROM oauth_states WHERE state=?',(nonce,))
             i=integrations(c)
             x=remote_json('https://api.weixin.qq.com/sns/oauth2/access_token?'+urllib.parse.urlencode(dict(appid=i['wechatAppId'],secret=i['wechatAppSecret'],code=query.get('code',[''])[0],grant_type='authorization_code')))
@@ -552,7 +557,7 @@ class Handler(BaseHTTPRequestHandler):
                 u={'id':uid()}; c.execute('INSERT INTO users(id,openid,nickname,avatar,followed,created) VALUES(?,?,?,?,?,?)',(u['id'],x['openid'],nickname or '参与者',avatar,int(followed),now()))
             else:
                 c.execute('UPDATE users SET nickname=?,avatar=?,followed=? WHERE id=?',(nickname or u.get('nickname') or '参与者',avatar or u.get('avatar') or '',int(followed),u['id']))
-            self.login(c,u['id']); return ('',302,'text/plain',{'Location':'/','Set-Cookie':self.cookie})
+            self.login(c,u['id']); return ('',302,'text/plain',{'Location':next_path,'Set-Cookie':self.cookie})
         if path=='/api/admin/login' and method=='POST':
             key=self.client_address[0]; bucket=LOGIN_LIMIT.setdefault(key,[]); bucket[:]=[t for t in bucket if now()-t<300]
             if len(bucket)>=10: raise Error('尝试过多，请5分钟后重试',429)
