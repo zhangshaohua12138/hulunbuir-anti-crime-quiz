@@ -107,7 +107,7 @@ body {
 .wheel.spinning { will-change: transform; }
 .wheel-label {
   position: absolute; left: 50%; top: 50%; width: 84px; margin-left: -42px; margin-top: -8px;
-  transform: rotate(var(--a)) translateY(-96px) rotate(calc(-1 * var(--a)));
+  transform: rotate(var(--a)) translateY(calc(-1 * var(--label-radius, 96px))) rotate(calc(-1 * var(--a)));
   text-align: center; font-size: 11px; line-height: 1.25; font-weight: 800;
   pointer-events: none; padding: 2px 0; z-index: 1;
 }
@@ -141,13 +141,13 @@ body {
   body.proto .brand-subtitle { font-size: 8px; }
   .hero { background-position: 62% center; }
   .wheel-wrap { width: 246px; height: 246px; }
-  .wheel-label { transform: rotate(var(--a)) translateY(-88px) rotate(calc(-1 * var(--a))); font-size: 10px; width: 76px; margin-left: -38px; }
+  .wheel-label { transform: rotate(var(--a)) translateY(calc(-1 * var(--label-radius, 88px))) rotate(calc(-1 * var(--a))); font-size: 10px; width: 76px; margin-left: -38px; }
   .wheel-center { width: 82px; height: 82px; font-size: 15px; }
 }
 
 @media (max-width: 360px) {
   .wheel-wrap { width: 230px; height: 230px; }
-  .wheel-label { transform: rotate(var(--a)) translateY(-82px) rotate(calc(-1 * var(--a))); font-size: 9.5px; width: 70px; margin-left: -35px; }
+  .wheel-label { transform: rotate(var(--a)) translateY(calc(-1 * var(--label-radius, 82px))) rotate(calc(-1 * var(--a))); font-size: 9.5px; width: 70px; margin-left: -35px; }
   .wheel-center { width: 76px; height: 76px; font-size: 14px; }
 }
 
@@ -428,3 +428,6 @@ body { background-image: none !important; }
 .share-arrow-line { font-size:46px; line-height:1; transform:rotate(-10deg); font-weight:600; }
 
 @media (max-width:700px) { .share-mask { padding-top:88px; } .share-guide h2 { font-size:23px; } }
+
+/* Dynamic wheel labels */
+.wheel-label.dense { width: 64px; margin-left: -32px; font-size: 9px; line-height: 1.2; }
