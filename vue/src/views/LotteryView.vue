@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import { useSession } from '../store'
 import type { Attempt, LotteryResult } from '../types'
+import MobileNav from '../components/MobileNav.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -70,4 +71,5 @@ async function draw() {
     </main>
     <div v-if="loading" class="loading">正在读取抽奖信息…</div>
   </div>
+  <MobileNav active="awards" />
 </template>

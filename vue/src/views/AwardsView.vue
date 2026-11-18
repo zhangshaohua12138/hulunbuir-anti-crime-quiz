@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import Pagination from '../components/Pagination.vue'
 import { api } from '../api'
 import { useSession } from '../store'
+import MobileNav from '../components/MobileNav.vue'
 
 interface Order {
   id: string
@@ -150,7 +151,8 @@ async function submitClaim() {
         <template v-if="claimOrder.type !== 'phone'">
           <label>收货地址<input v-model="claimForm.address" maxlength="300" placeholder="地址或自提点" /></label>
           <label>自提点（可选）<input v-model="claimForm.pickup" maxlength="300" /></label>
-        </template>
+          <MobileNav active="awards" />
+</template>
         <p v-if="claimError" class="form-error">{{ claimError }}</p>
         <div class="claim-actions">
           <button class="btn secondary" type="button" @click="claimOrder = null">取消</button>
@@ -159,4 +161,5 @@ async function submitClaim() {
       </form>
     </div>
   </div>
+  <MobileNav active="awards" />
 </template>

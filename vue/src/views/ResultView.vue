@@ -5,6 +5,7 @@ import { api } from '../api'
 import { useSession } from '../store'
 import type { Attempt } from '../types'
 import ShareReviveOverlay from '../components/ShareReviveOverlay.vue'
+import MobileNav from '../components/MobileNav.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -85,4 +86,5 @@ function lottery() {
     <div v-else class="loading">{{ loading ? '正在读取成绩…' : (error || '成绩不存在') }}</div>
     <ShareReviveOverlay v-if="showShare && attempt" :attempt-id="attempt.id" @close="showShare = false" @granted="onRevived" />
   </div>
+  <MobileNav active="home" />
 </template>

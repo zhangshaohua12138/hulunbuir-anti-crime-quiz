@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '../api'
 import { useSession } from '../store'
+import MobileNav from '../components/MobileNav.vue'
 
 const session = useSession()
 const router = useRouter()
@@ -50,7 +51,8 @@ async function agree() {
         <p>达到 {{ config?.passScore ?? 80 }} 分可参与抽奖。答题结束后按最高成绩加抽奖积分参与排名，多套不累计。</p>
         <p>现金红包由活动主办方通过微信发放；实物奖品需登记收货信息。活动结束后，排名前 {{ config?.winnerCount ?? 50 }} 名按公示规则发放话费奖励。</p>
         <p>请勿使用外挂、脚本或冒用他人身份参与，违规行为将被取消资格。</p>
-      </template>
+        <MobileNav active="rules" />
+</template>
       <label class="rules-check">
         <input v-model="accepted" type="checkbox" />
         我已阅读并同意活动规则
@@ -61,4 +63,5 @@ async function agree() {
       </button>
     </main>
   </div>
+  <MobileNav active="rules" />
 </template>

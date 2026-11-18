@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import { useSession } from '../store'
 import type { Attempt, QuizQuestion } from '../types'
+import MobileNav from '../components/MobileNav.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -155,4 +156,5 @@ function format(seconds: number) {
 
     <div v-else class="loading">{{ loading ? '正在加载题目…' : (error || '题目不存在') }}</div>
   </div>
+  <MobileNav active="home" />
 </template>

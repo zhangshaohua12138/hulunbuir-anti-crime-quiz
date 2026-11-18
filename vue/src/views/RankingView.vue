@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import Pagination from '../components/Pagination.vue'
 import { api } from '../api'
 import { useSession } from '../store'
+import MobileNav from '../components/MobileNav.vue'
 
 interface Row {
   rank: number
@@ -75,4 +76,5 @@ function time(seconds: number) {
       <p v-if="error" class="form-error">{{ error }}</p>
     </main>
   </div>
+  <MobileNav active="ranking" />
 </template>

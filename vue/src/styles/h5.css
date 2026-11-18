@@ -209,3 +209,31 @@
 .banner-button { margin-top: 2px; }
 @media (max-width: 700px) { .banner-copy { max-width: 88% !important; } }
 
+
+/* Mobile parity with native H5 */
+.mobile-nav { display: none; }
+@media (max-width: 700px) {
+  .site-header { height: 69px; min-height: 69px; padding: 0 16px; flex-wrap: nowrap; gap: 10px; }
+  .site-nav { display: none; }
+  .site-header .brand { min-width: 0; }
+  .site-header .brand strong { font-size: 13px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .site-header .brand small { font-size: 9px; margin-top: 2px; }
+  .site-header .brand-mark { width: 32px; height: 32px; border-radius: 9px; font-size: 12px; }
+  .page { width: calc(100% - 24px); margin: 16px auto 88px; }
+  .mobile-nav { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: 64px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: #ffffffee; border-top: 1px solid var(--line); backdrop-filter: blur(10px); }
+  .mobile-nav a { flex: 1; display: grid; justify-items: center; align-content: center; gap: 2px; color: var(--muted); font-size: 10px; }
+  .mobile-nav a.active { color: var(--primary-dark); font-weight: 700; }
+  .mobile-nav .nav-symbol { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 7px; background: var(--primary-soft); color: var(--primary-dark); font-size: 11px; font-weight: 700; }
+  .mobile-nav a.active .nav-symbol { background: var(--primary); color: var(--btn-text); }
+  .site-footer { display: none; }
+  .hero { padding: 28px 22px; min-height: 220px; }
+  .hero h1 { font-size: 25px; }
+  .home-preview { gap: 12px; }
+  .card { padding: 18px; }
+  .stats { gap: 6px; }
+  .stat strong { font-size: 22px; }
+}
+
+@media (max-width: 700px) {
+  .quiz-page, .result-page, .rules-page, .lottery-page, .ranking-page, .awards-page { padding-bottom: 78px; }
+}

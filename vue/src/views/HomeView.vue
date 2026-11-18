@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import HomePreview from '../components/HomePreview.vue'
+import MobileNav from '../components/MobileNav.vue'
 import { api } from '../api'
 import { useSession } from '../store'
 import { applyTheme } from '../theme'
@@ -109,7 +110,7 @@ async function start() {
       <a class="brand" href="#/">
         <span class="brand-mark">法</span>
         <span>
-          <strong>呼伦贝尔市 · 有奖答题</strong>
+          <strong>{{ boot?.config.title || '呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动' }}</strong>
           <small>{{ boot?.config.brandSubtitle || '全民参与 · 共建平安' }}</small>
         </span>
       </a>
@@ -151,6 +152,8 @@ async function start() {
         <button class="text-link" type="button" @click="followOpen = false">稍后再说</button>
       </div>
     </div>
+
+    <MobileNav active="home" />
 
     <footer class="site-footer">
       {{ boot?.config.organizer || '主办单位待确认' }} · {{ boot?.config.footerText || '学法知法 · 守护平安 · 共建美好家园' }}
