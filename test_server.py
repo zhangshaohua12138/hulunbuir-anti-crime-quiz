@@ -448,16 +448,33 @@ class ServerTests(unittest.TestCase):
         for constraint in ['stock','daily','total_budget','daily_budget']:
             with self.subTest(constraint=constraint):
                 self.sql('DELETE FROM orders'); self.sql('DELETE FROM draws')
-                self.configure(budgetCents=10000,dailyBudgetCents=10000)
+                self.configure(budgetCents=10000,dailyBudgetCents=10000,budgetAutoDaily=False)
                 self.prize(stock=1 if constraint=='stock' else 10,daily=1 if constraint=='daily' else 10)
-                if constraint=='total_budget': self.configure(budgetCents=100)
-                if constraint=='daily_budget': self.configure(dailyBudgetCents=100)
+                if constraint in ['total_budget','daily_budget']:
+                    self.sql("UPDATE prizes SET type='cash'")
+                    self.configure(budgetCents=100) if constraint=='total_budget' else self.configure(dailyBudgetCents=100)
                 user=self.login(); attempt=self.start(user); self.submit(user,attempt)
                 self.assertTrue(self.ok('/api/lottery','POST',{'attemptId':attempt['id']},user)['won'])
                 other=self.login(); next_attempt=self.start(other); self.submit(other,next_attempt)
                 self.assertEqual(self.request('/api/lottery','POST',{'attemptId':next_attempt['id']},other)[0],400)
                 self.assertEqual(len(self.sql('SELECT * FROM draws')),1)
                 self.assertEqual(self.sql('SELECT SUM(amountCents) n FROM orders')[0]['n'],100)
+
+    def test_budget_exhaustion_falls_back_to_none(self):
+        self.sql('DELETE FROM prizes')
+        self.sql("INSERT INTO prizes(id,name,type,amountCents,stock,dailyLimit,weight,enabled,points) VALUES(?,?,?,?,?,?,?,1,0)",(server.uid(),'谢谢参与','none',0,0,0,1))
+        self.sql("INSERT INTO prizes(id,name,type,amountCents,stock,dailyLimit,weight,enabled,points) VALUES(?,?,?,?,?,?,?,1,0)",(server.uid(),'现金红包','cash',100,100,100,1))
+        self.configure(budgetCents=50,dailyBudgetCents=50,budgetAutoDaily=False)
+        user=self.login(); attempt=self.start(user); self.submit(user,attempt)
+        result=self.ok('/api/lottery','POST',{'attemptId':attempt['id']},user)
+        self.assertFalse(result['won'])
+        self.assertEqual(self.sql('SELECT COUNT(*) n FROM orders')[0]['n'],0)
+
+    def test_auto_daily_budget_is_total_over_days(self):
+        cfg={'startAt':'2026-11-13T00:00:00+08:00','endAt':'2026-11-15T00:00:00+08:00','budgetCents':101,'dailyBudgetCents':999,'budgetAutoDaily':True}
+        self.assertEqual(server.effective_daily_budget(cfg),50)
+        cfg['budgetAutoDaily']=False
+        self.assertEqual(server.effective_daily_budget(cfg),999)
 
     def test_personal_win_limits(self):
         self.configure(dailyFree=3,dailyWinLimit=1,totalWinLimit=1)

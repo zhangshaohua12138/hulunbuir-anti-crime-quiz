@@ -92,10 +92,10 @@ def init_db():
             if column not in {r['name'] for r in c.execute(f'PRAGMA table_info({table})')}: c.execute(ddl)
         if not one(c,'SELECT * FROM settings WHERE key="config"'):
             start=datetime.now(TZ).replace(hour=0,minute=0,second=0,microsecond=0)
-            cfg=dict(title='呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动',organizer='中共呼伦贝尔市委政法委员会',brandSubtitle='全民参与 · 共建平安',shareDesc='学到知识，守护平安家园',startAt=start.isoformat(),endAt=(start+timedelta(days=7)).isoformat(),dailyFree=1,reviveLimit=1,passScore=80,timeLimitSeconds=1200,resumeSeconds=1200,showAnswers=False,leaderboardLimit=100,winnerCount=50,shareMode='manual',shareUrl='',followUrl='',awardDescription='积分前50名话费奖励：第1—10名每人300元，第11—30名每人150元，第31—50名每人100元；活动结束后填写手机号，统一发放。',themeColor='#A9C2EA',template='1',heroImage='',homeEyebrow='深化扫黑除恶 · 共建平安家园',homeIntro='让法治精神深入人心，让平安建设与你同行。',homeMeta='全民参与 · 共护平安',homeCardTitle='今天，也为平安加一分',homeCta='开始答题，赢取好礼',homeGiftTitle='知识有力量，参与有惊喜',footerText='学法知法 · 守护平安 · 共建美好家园',rulesIntro='开始前花一分钟，了解这场知识之旅。',rulesText='',loginTip='此账号仅用于本地体验，不会连接微信或发放真实奖品。',resultTip='',copy={'loginTitle':'登录演示账号','resultEyebrow':'本次成绩','resultExpiredEyebrow':'本次答题已过期','resultPassTitle':'答题达标，收获满满！','resultFailTitle':'再接再厉，平安知识多一分','resultExpiredTitle':'本次答题已过期','resultRankingButton':'查看积分榜','resultHomeButton':'返回首页','resultPassTip':'','resultDrawnTip':'','resultFailTip':'','resultExpiredTip':'','lotteryEyebrow':'答题有礼','lotteryTitle':'答题有礼，好运开启','rankingEyebrow':'共同进步','rankingTitle':'每一分努力，都值得被看见','rankingIntro':'榜单更新中，活动结束后冻结最终排名','rankingEmpty':'还没有上榜记录，快来开启你的知识之旅。','rankingHelp':'按所有已提交成绩的最高分（低于 80 分也可上榜）加抽奖积分排名，多套不累计。','winnersEyebrow':'荣誉榜单','winnersTitle':'获奖名单公示','winnersIntro':'榜单已封存，排名以最终公示为准','awardsEyebrow':'我的奖品','awardsTitle':'我的奖品','awardsIntro':'记录每一份收获，也感谢你的每一次参与。','awardsEmpty':'暂无中奖记录。完成答题并达标后，可参与好礼抽取。','quizSingle':'单选题','quizMulti':'多选题','quizNext':'下一题 →','quizSubmit':'完成答题，交卷','quizHelpSingle':'单选题：只能选 1 项，选对得 8 分。','quizHelpMulti':'多选题：至少选 2 项，全部选对才得分；漏选、错选均不得分。'},countFailed=True,countRevived=True,dedupDays=1,shuffleOptions=True,dailyWinLimit=1,totalWinLimit=3,budgetCents=100000,dailyBudgetCents=20000,paused=False,confirmations={f'Q-{i:02}':False for i in range(1,14)},productionConfirmed=False)
+            cfg=dict(title='呼伦贝尔市深化扫黑除恶专项斗争有奖答题活动',organizer='中共呼伦贝尔市委政法委员会',brandSubtitle='全民参与 · 共建平安',shareDesc='学到知识，守护平安家园',startAt=start.isoformat(),endAt=(start+timedelta(days=7)).isoformat(),dailyFree=1,reviveLimit=1,passScore=80,timeLimitSeconds=1200,resumeSeconds=1200,showAnswers=False,leaderboardLimit=100,winnerCount=50,shareMode='manual',shareUrl='',followUrl='',awardDescription='积分前50名话费奖励：第1—10名每人300元，第11—30名每人150元，第31—50名每人100元；活动结束后填写手机号，统一发放。',themeColor='#A9C2EA',template='1',heroImage='',homeEyebrow='深化扫黑除恶 · 共建平安家园',homeIntro='让法治精神深入人心，让平安建设与你同行。',homeMeta='全民参与 · 共护平安',homeCardTitle='今天，也为平安加一分',homeCta='开始答题，赢取好礼',homeGiftTitle='知识有力量，参与有惊喜',footerText='学法知法 · 守护平安 · 共建美好家园',rulesIntro='开始前花一分钟，了解这场知识之旅。',rulesText='',loginTip='此账号仅用于本地体验，不会连接微信或发放真实奖品。',resultTip='',copy={'loginTitle':'登录演示账号','resultEyebrow':'本次成绩','resultExpiredEyebrow':'本次答题已过期','resultPassTitle':'答题达标，收获满满！','resultFailTitle':'再接再厉，平安知识多一分','resultExpiredTitle':'本次答题已过期','resultRankingButton':'查看积分榜','resultHomeButton':'返回首页','resultPassTip':'','resultDrawnTip':'','resultFailTip':'','resultExpiredTip':'','lotteryEyebrow':'答题有礼','lotteryTitle':'答题有礼，好运开启','rankingEyebrow':'共同进步','rankingTitle':'每一分努力，都值得被看见','rankingIntro':'榜单更新中，活动结束后冻结最终排名','rankingEmpty':'还没有上榜记录，快来开启你的知识之旅。','rankingHelp':'按所有已提交成绩的最高分（低于 80 分也可上榜）加抽奖积分排名，多套不累计。','winnersEyebrow':'荣誉榜单','winnersTitle':'获奖名单公示','winnersIntro':'榜单已封存，排名以最终公示为准','awardsEyebrow':'我的奖品','awardsTitle':'我的奖品','awardsIntro':'记录每一份收获，也感谢你的每一次参与。','awardsEmpty':'暂无中奖记录。完成答题并达标后，可参与好礼抽取。','quizSingle':'单选题','quizMulti':'多选题','quizNext':'下一题 →','quizSubmit':'完成答题，交卷','quizHelpSingle':'单选题：只能选 1 项，选对得 8 分。','quizHelpMulti':'多选题：至少选 2 项，全部选对才得分；漏选、错选均不得分。'},countFailed=True,countRevived=True,dedupDays=1,shuffleOptions=True,dailyWinLimit=1,totalWinLimit=3,budgetCents=100000,dailyBudgetCents=20000,budgetAutoDaily=True,paused=False,confirmations={f'Q-{i:02}':False for i in range(1,14)},productionConfirmed=False)
             c.execute('INSERT INTO settings VALUES("config",?)',(dumps(cfg),))
         current=config(c)
-        for k,v in [('brandSubtitle','全民参与 · 共建平安'),('shareDesc','学到知识，守护平安家园'),('themeColor','#A9C2EA'),('template','1'),('heroImage',''),('homeEyebrow','深化扫黑除恶 · 共建平安家园'),('homeIntro','让法治精神深入人心，让平安建设与你同行。'),('homeMeta','全民参与 · 共护平安'),('homeCardTitle','今天，也为平安加一分'),('homeCta','开始答题，赢取好礼'),('homeGiftTitle','知识有力量，参与有惊喜'),('footerText','学法知法 · 守护平安 · 共建美好家园'),('rulesIntro','开始前花一分钟，了解这场知识之旅。'),('rulesText',''),('loginTip','此账号仅用于本地体验，不会连接微信或发放真实奖品。'),('resultTip','')]:
+        for k,v in [('brandSubtitle','全民参与 · 共建平安'),('shareDesc','学到知识，守护平安家园'),('themeColor','#A9C2EA'),('template','1'),('budgetAutoDaily',True),('heroImage',''),('homeEyebrow','深化扫黑除恶 · 共建平安家园'),('homeIntro','让法治精神深入人心，让平安建设与你同行。'),('homeMeta','全民参与 · 共护平安'),('homeCardTitle','今天，也为平安加一分'),('homeCta','开始答题，赢取好礼'),('homeGiftTitle','知识有力量，参与有惊喜'),('footerText','学法知法 · 守护平安 · 共建美好家园'),('rulesIntro','开始前花一分钟，了解这场知识之旅。'),('rulesText',''),('loginTip','此账号仅用于本地体验，不会连接微信或发放真实奖品。'),('resultTip','')]:
             if k not in current: current[k]=v
         current.setdefault('copy',{'loginTitle':'登录演示账号','resultEyebrow':'本次成绩','resultExpiredEyebrow':'本次答题已过期','resultPassTitle':'答题达标，收获满满！','resultFailTitle':'再接再厉，平安知识多一分','resultExpiredTitle':'本次答题已过期','resultRankingButton':'查看积分榜','resultHomeButton':'返回首页','resultPassTip':'','resultDrawnTip':'','resultFailTip':'','resultExpiredTip':'','lotteryEyebrow':'答题有礼','lotteryTitle':'答题有礼，好运开启','rankingEyebrow':'共同进步','rankingTitle':'每一分努力，都值得被看见','rankingIntro':'榜单更新中，活动结束后冻结最终排名','rankingEmpty':'还没有上榜记录，快来开启你的知识之旅。','rankingHelp':'按所有已提交成绩的最高分（低于 80 分也可上榜）加抽奖积分排名，多套不累计。','winnersEyebrow':'荣誉榜单','winnersTitle':'获奖名单公示','winnersIntro':'榜单已封存，排名以最终公示为准','awardsEyebrow':'我的奖品','awardsTitle':'我的奖品','awardsIntro':'记录每一份收获，也感谢你的每一次参与。','awardsEmpty':'暂无中奖记录。完成答题并达标后，可参与好礼抽取。','quizSingle':'单选题','quizMulti':'多选题','quizNext':'下一题 →','quizSubmit':'完成答题，交卷','quizHelpSingle':'单选题：只能选 1 项，选对得 8 分。','quizHelpMulti':'多选题：至少选 2 项，全部选对才得分；漏选、错选均不得分。'})
         saveconfig(c,current)
@@ -141,6 +141,11 @@ def freeze(c,cfg,force=False):
             c.execute('INSERT INTO orders(id,user_id,prize_name,type,amountCents,created,day,status,source) VALUES(?,?,?,?,?,?,?,?,?)',(uid(),r['user_id'],f'话费奖励 {amount} 元','phone',0,now(),day(),'pending','ranking'))
     c.execute('INSERT INTO settings VALUES("frozen",?)',(iso(now()),)); audit(c,'freeze',{})
 
+def effective_daily_budget(cfg):
+    if cfg.get('budgetAutoDaily', True):
+        days=max(1,(int(epoch(cfg['endAt'])-epoch(cfg['startAt']))+86399)//86400)
+        return max(0,int(cfg.get('budgetCents',0))//days)
+    return max(0,int(cfg.get('dailyBudgetCents',0)))
 def account(c,user,cfg):
     if is_test_user(user):
         points=c.execute("SELECT COALESCE(MAX(points),0)+COALESCE((SELECT bonus_points FROM users WHERE id=?),0) FROM attempts WHERE user_id=? AND status='submitted'",(user['id'],user['id'])).fetchone()[0]
@@ -608,20 +613,24 @@ class Handler(BaseHTTPRequestHandler):
         self.require_active(c,cfg,u)
         wins=allrows(c,"SELECT day FROM orders WHERE user_id=? AND source='lottery'",(u['id'],))
         if not is_test_user(u) and (len(wins)>=cfg['totalWinLimit'] or sum(x['day']==day() for x in wins)>=cfg['dailyWinLimit']): raise Error('已达到个人中奖上限')
-        spent=c.execute("SELECT COALESCE(SUM(amountCents),0) FROM orders WHERE source='lottery'").fetchone()[0]
-        daily=c.execute("SELECT COALESCE(SUM(amountCents),0) FROM orders WHERE source='lottery' AND day=?",(day(),)).fetchone()[0]
-        pool=allrows(c,'SELECT * FROM prizes WHERE enabled=1 AND weight>0'); available=[]
+        spent=c.execute("SELECT COALESCE(SUM(amountCents),0) FROM orders WHERE source IN ('lottery','test')").fetchone()[0]
+        daily=c.execute("SELECT COALESCE(SUM(amountCents),0) FROM orders WHERE source IN ('lottery','test') AND day=?",(day(),)).fetchone()[0]
+        daily_limit=effective_daily_budget(cfg)
+        pool=allrows(c,'SELECT * FROM prizes WHERE enabled=1 AND weight>0'); eligible=[]
         for p in pool:
-            if p['type']=='none': continue
+            if p['type']=='none':
+                eligible.append(p); continue
             total=c.execute('SELECT COUNT(*) FROM orders WHERE prize_id=?',(p['id'],)).fetchone()[0]
             today=c.execute('SELECT COUNT(*) FROM orders WHERE prize_id=? AND day=?',(p['id'],day())).fetchone()[0]
-            if total<p['stock'] and today<p['dailyLimit'] and spent+p['amountCents']<=cfg['budgetCents'] and daily+p['amountCents']<=cfg['dailyBudgetCents']: available.append(p['id'])
-        if not available: raise Error('今日奖品已抽完，抽奖机会保留')
-        roll=secrets.randbelow(sum(p['weight'] for p in pool)); chosen=pool[-1]
-        for p in pool:
+            if total>=p['stock'] or today>=p['dailyLimit']: continue
+            if p['type']=='cash' and (spent+p['amountCents']>cfg['budgetCents'] or daily+p['amountCents']>daily_limit): continue
+            eligible.append(p)
+        if not eligible: raise Error('本轮奖品已全部抽完，抽奖机会保留')
+        roll=secrets.randbelow(sum(p['weight'] for p in eligible)); chosen=eligible[-1]
+        for p in eligible:
             roll-=p['weight']
             if roll<0: chosen=p; break
-        won=chosen['id'] in available; message='恭喜中奖，请在我的奖品中查看发放状态' if won else '本次未中奖，感谢参与'
+        won=chosen['type']!='none'; message='恭喜中奖，请在我的奖品中查看发放状态' if won else '本次未中奖，感谢参与'
         draw=uid(); c.execute('INSERT INTO draws VALUES(?,?,?,?,?,?,?,?)',(draw,u['id'],a['id'],chosen['id'],now(),day(),int(won),message)); order=None
         if won:
             status='pending'; prize_points=0
@@ -714,7 +723,7 @@ class Handler(BaseHTTPRequestHandler):
                     if type(updated[k]) is not int or updated[k]<0: raise Error(k+'必须为非负整数')
                 if not 1<=updated['passScore']<=100 or updated['resumeSeconds']<60 or updated['dailyFree']<1 or updated['leaderboardLimit']<1: raise Error('配置数值超出范围')
                 if epoch(updated['endAt'])<=epoch(updated['startAt']): raise Error('结束时间必须晚于开始时间')
-                for k in ['paused','showAnswers','countFailed','countRevived','shuffleOptions','productionConfirmed']:
+                for k in ['paused','showAnswers','countFailed','countRevived','shuffleOptions','productionConfirmed','budgetAutoDaily']:
                     if type(updated[k]) is not bool: raise Error(k+'须为布尔值')
                 if updated['shareMode'] not in ['manual','sdk','disabled','free']: raise Error('复活模式无效')
                 if set(updated['confirmations'])!={f'Q-{i:02}' for i in range(1,14)} or any(type(v) is not bool for v in updated['confirmations'].values()): raise Error('确认清单不完整')
