@@ -385,8 +385,8 @@ class Handler(BaseHTTPRequestHandler):
         token=cookie.get('quiz_session')
         return one(c,'SELECT * FROM sessions WHERE token=? AND expires>?',(token.value,now())) if token else None
     def login(self,c,user_id=None,admin=False,admin_user=None):
-        token=secrets.token_urlsafe(32); c.execute('INSERT INTO sessions(token,user_id,admin,expires,admin_user_id,admin_role) VALUES(?,?,?,?,?,?)',(token,user_id,int(admin),now()+86400,admin_user['id'] if admin_user else '',admin_user['role'] if admin_user else ('super' if admin else '')))
-        self.cookie='quiz_session='+token+'; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400'+('; Secure' if MODE=='production' else '')
+        token=secrets.token_urlsafe(32); life=28800 if admin else 86400; c.execute('INSERT INTO sessions(token,user_id,admin,expires,admin_user_id,admin_role) VALUES(?,?,?,?,?,?)',(token,user_id,int(admin),now()+life,admin_user['id'] if admin_user else '',admin_user['role'] if admin_user else ('super' if admin else '')))
+        self.cookie='quiz_session='+token+'; HttpOnly; SameSite=Lax; Path=/; Max-Age='+str(28800 if admin else 86400)+('; Secure' if MODE=='production' else '')
     def user(self,c):
         s=self.session(c); u=one(c,'SELECT * FROM users WHERE id=?',(s['user_id'],)) if s and s['user_id'] else None
         if not u: raise Error('请先登录',401)
@@ -675,7 +675,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def admin_route(self,c,cfg,path,query,data):
         method=self.command
-        if path.startswith('/api/admin/integrations') or path in ['/api/admin/reset','/api/admin/unfreeze'] or path.startswith('/api/admin/accounts'):
+        if path.startswith('/api/admin/integrations') or path in ['/api/admin/reset','/api/admin/unfreeze','/api/admin/upload'] or path.startswith('/api/admin/accounts'):
             self.require_super(c)
         if re.fullmatch(r'/api/admin/users/[a-f0-9]+/test',path): self.require_super(c)
         if path=='/api/admin/users' and method=='GET':
@@ -717,7 +717,7 @@ class Handler(BaseHTTPRequestHandler):
             if method=='POST':
                 username=str(data.get('username','')).strip()[:40]; password=str(data.get('password','')); role=str(data.get('role','operator'))
                 if not re.fullmatch(r'[A-Za-z0-9_.-]{3,40}',username): raise Error('用户名格式不正确')
-                if len(password)<8: raise Error('密码至少8位')
+                if len(password)<12: raise Error('密码至少12位')
                 if role not in ['super','operator']: raise Error('角色无效')
                 if one(c,'SELECT id FROM admin_users WHERE username=?',(username,)): raise Error('用户名已存在',409)
                 aid=uid(); c.execute('INSERT INTO admin_users VALUES(?,?,?,?,1,?)',(aid,username,hash_password(password),role,now()))
@@ -733,7 +733,7 @@ class Handler(BaseHTTPRequestHandler):
             if role not in ['super','operator']: raise Error('角色无效')
             password=data.get('password')
             if password is not None:
-                if len(str(password))<8: raise Error('密码至少8位')
+                if len(str(password))<12: raise Error('密码至少12位')
                 c.execute('UPDATE admin_users SET password_hash=? WHERE id=?',(hash_password(password),target['id']))
             c.execute('UPDATE admin_users SET role=?,enabled=? WHERE id=?',(role,int(bool(enabled)),target['id']))
             audit(c,'admin.update',{'id':target['id'],'role':role,'enabled':bool(enabled)})
