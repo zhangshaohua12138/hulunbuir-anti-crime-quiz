@@ -68,6 +68,20 @@ def state(cfg):
     if now()<epoch(cfg['startAt']): return 'pending'
     return 'paused' if cfg['paused'] else 'active'
 
+def hash_password(password):
+    salt=secrets.token_hex(16)
+    digest=hashlib.pbkdf2_hmac('sha256',str(password).encode(),bytes.fromhex(salt),120000).hex()
+    return 'pbkdf2_sha256$120000$'+salt+'$'+digest
+
+def verify_password(password, encoded):
+    try:
+        algo, rounds, salt, digest=encoded.split('$',3)
+        if algo!='pbkdf2_sha256': return False
+        calc=hashlib.pbkdf2_hmac('sha256',str(password).encode(),bytes.fromhex(salt),int(rounds)).hex()
+        return hmac.compare_digest(calc,digest)
+    except Exception:
+        return False
+
 def init_db():
     Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
     with transaction() as c:
@@ -75,7 +89,8 @@ def init_db():
         PRAGMA journal_mode=WAL;
         CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,openid TEXT UNIQUE NOT NULL,nickname TEXT,avatar TEXT DEFAULT '',followed INTEGER DEFAULT 0,rules INTEGER DEFAULT 0,created REAL,blocked INTEGER DEFAULT 0,bonus_points INTEGER DEFAULT 0,is_test INTEGER DEFAULT 0);
-        CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,user_id TEXT,admin INTEGER DEFAULT 0,expires REAL);
+        CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY,user_id TEXT,admin INTEGER DEFAULT 0,expires REAL,admin_user_id TEXT DEFAULT '',admin_role TEXT DEFAULT '');
+        CREATE TABLE IF NOT EXISTS admin_users(id TEXT PRIMARY KEY,username TEXT UNIQUE,password_hash TEXT,role TEXT,enabled INTEGER DEFAULT 1,created REAL);
         CREATE TABLE IF NOT EXISTS questions(id TEXT PRIMARY KEY,type TEXT,stem TEXT UNIQUE,payload TEXT,enabled INTEGER DEFAULT 1);
         CREATE TABLE IF NOT EXISTS attempts(id TEXT PRIMARY KEY,user_id TEXT REFERENCES users(id),day TEXT,revived INTEGER,status TEXT,created REAL,deadline REAL,expires REAL,submitted REAL,questions TEXT,answers TEXT DEFAULT '{}',score INTEGER,passed INTEGER,points INTEGER DEFAULT 0,seconds INTEGER DEFAULT 0,ip TEXT,policy TEXT);
         CREATE INDEX IF NOT EXISTS idx_attempt_user ON attempts(user_id,day,status);
@@ -88,7 +103,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS oauth_states(state TEXT PRIMARY KEY,expires REAL);
         ''')
         # 旧库平滑升级：SQLite 增加列；新库 CREATE TABLE 已包含。
-        for table,column,ddl in [('users','bonus_points','ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0'),('users','is_test','ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'),('users','avatar',"ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''"),('orders','package_info',"ALTER TABLE orders ADD COLUMN package_info TEXT DEFAULT ''"),('orders','transfer_state',"ALTER TABLE orders ADD COLUMN transfer_state TEXT DEFAULT ''"),('prizes','points','ALTER TABLE prizes ADD COLUMN points INTEGER DEFAULT 0')]:
+        for table,column,ddl in [('sessions','admin_user_id',"ALTER TABLE sessions ADD COLUMN admin_user_id TEXT DEFAULT ''"),('sessions','admin_role',"ALTER TABLE sessions ADD COLUMN admin_role TEXT DEFAULT ''"),('users','bonus_points','ALTER TABLE users ADD COLUMN bonus_points INTEGER DEFAULT 0'),('users','is_test','ALTER TABLE users ADD COLUMN is_test INTEGER DEFAULT 0'),('users','avatar',"ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''"),('orders','package_info',"ALTER TABLE orders ADD COLUMN package_info TEXT DEFAULT ''"),('orders','transfer_state',"ALTER TABLE orders ADD COLUMN transfer_state TEXT DEFAULT ''"),('prizes','points','ALTER TABLE prizes ADD COLUMN points INTEGER DEFAULT 0')]:
             if column not in {r['name'] for r in c.execute(f'PRAGMA table_info({table})')}: c.execute(ddl)
         if not one(c,'SELECT * FROM settings WHERE key="config"'):
             start=datetime.now(TZ).replace(hour=0,minute=0,second=0,microsecond=0)
@@ -99,6 +114,10 @@ def init_db():
             if k not in current: current[k]=v
         current.setdefault('copy',{'loginTitle':'登录演示账号','resultEyebrow':'本次成绩','resultExpiredEyebrow':'本次答题已过期','resultPassTitle':'答题达标，收获满满！','resultFailTitle':'再接再厉，平安知识多一分','resultExpiredTitle':'本次答题已过期','resultRankingButton':'查看积分榜','resultHomeButton':'返回首页','resultPassTip':'','resultDrawnTip':'','resultFailTip':'','resultExpiredTip':'','lotteryEyebrow':'答题有礼','lotteryTitle':'答题有礼，好运开启','rankingEyebrow':'共同进步','rankingTitle':'每一分努力，都值得被看见','rankingIntro':'榜单更新中，活动结束后冻结最终排名','rankingEmpty':'还没有上榜记录，快来开启你的知识之旅。','rankingHelp':'按所有已提交成绩的最高分（低于 80 分也可上榜）加抽奖积分排名，多套不累计。','winnersEyebrow':'荣誉榜单','winnersTitle':'获奖名单公示','winnersIntro':'榜单已封存，排名以最终公示为准','awardsEyebrow':'我的奖品','awardsTitle':'我的奖品','awardsIntro':'记录每一份收获，也感谢你的每一次参与。','awardsEmpty':'暂无中奖记录。完成答题并达标后，可参与好礼抽取。','quizSingle':'单选题','quizMulti':'多选题','quizNext':'下一题 →','quizSubmit':'完成答题，交卷','quizHelpSingle':'单选题：只能选 1 项，选对得 8 分。','quizHelpMulti':'多选题：至少选 2 项，全部选对才得分；漏选、错选均不得分。'})
         saveconfig(c,current)
+        if not one(c,'SELECT * FROM admin_users'):
+            password=os.getenv('ADMIN_PASSWORD','demo-admin-2026' if MODE=='demo' else '')
+            if password:
+                c.execute('INSERT INTO admin_users(id,username,password_hash,role,enabled,created) VALUES(?,?,?,?,1,?)',(uid(),'admin',hash_password(password),'super',now()))
         if MODE=='demo' and not one(c,'SELECT id FROM questions LIMIT 1'):
             for typ in ['single','multiple']:
                 for i in range(30):
@@ -365,8 +384,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception: return None
         token=cookie.get('quiz_session')
         return one(c,'SELECT * FROM sessions WHERE token=? AND expires>?',(token.value,now())) if token else None
-    def login(self,c,user_id=None,admin=False):
-        token=secrets.token_urlsafe(32); c.execute('INSERT INTO sessions VALUES(?,?,?,?)',(token,user_id,int(admin),now()+86400))
+    def login(self,c,user_id=None,admin=False,admin_user=None):
+        token=secrets.token_urlsafe(32); c.execute('INSERT INTO sessions(token,user_id,admin,expires,admin_user_id,admin_role) VALUES(?,?,?,?,?,?)',(token,user_id,int(admin),now()+86400,admin_user['id'] if admin_user else '',admin_user['role'] if admin_user else ('super' if admin else '')))
         self.cookie='quiz_session='+token+'; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400'+('; Secure' if MODE=='production' else '')
     def user(self,c):
         s=self.session(c); u=one(c,'SELECT * FROM users WHERE id=?',(s['user_id'],)) if s and s['user_id'] else None
@@ -376,6 +395,13 @@ class Handler(BaseHTTPRequestHandler):
     def admin(self,c):
         s=self.session(c)
         if not s or not s['admin']: raise Error('请先登录管理后台',401)
+        row=one(c,'SELECT * FROM admin_users WHERE id=?',(s.get('admin_user_id') or '',)) if s.get('admin_user_id') else None
+        if row and not row['enabled']: raise Error('管理员账号已停用',403)
+        self.admin_user=row
+        self.admin_role=(row['role'] if row else s.get('admin_role')) or 'super'
+    def require_super(self,c):
+        self.admin(c)
+        if self.admin_role!='super': raise Error('仅超级管理员可操作',403)
     def follow_ok(self,c,u):
         # 测试账号只用于验收；真实微信用户每次都实时核对，不能只信登录时的缓存。
         if is_test_user(u): return True
@@ -477,9 +503,13 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/admin/login' and method=='POST':
             key=self.client_address[0]; bucket=LOGIN_LIMIT.setdefault(key,[]); bucket[:]=[t for t in bucket if now()-t<300]
             if len(bucket)>=10: raise Error('尝试过多，请5分钟后重试',429)
-            bucket.append(now()); expected=os.getenv('ADMIN_PASSWORD','demo-admin-2026' if MODE=='demo' else '')
-            if not expected or not hmac.compare_digest(str(data.get('username','')),'admin') or not hmac.compare_digest(str(data.get('password','')),expected): raise Error('账号或密码错误',401)
-            bucket.clear(); self.login(c,admin=True); return {'ok':True}
+            bucket.append(now()); username=str(data.get('username','')); password=str(data.get('password',''))
+            admin_row=one(c,'SELECT * FROM admin_users WHERE username=?',(username,))
+            if admin_row and admin_row['enabled'] and verify_password(password,admin_row['password_hash']):
+                bucket.clear(); self.login(c,admin=True,admin_user=admin_row); return {'ok':True,'role':admin_row['role'],'username':admin_row['username']}
+            expected=os.getenv('ADMIN_PASSWORD','demo-admin-2026' if MODE=='demo' else '')
+            if account or not expected or not hmac.compare_digest(username,'admin') or not hmac.compare_digest(password,expected): raise Error('账号或密码错误',401)
+            bucket.clear(); self.login(c,admin=True); return {'ok':True,'role':'super','username':'admin'}
         if path=='/api/logout' and method=='POST':
             s=self.session(c)
             if s: c.execute('DELETE FROM sessions WHERE token=?',(s['token'],))
@@ -645,6 +675,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def admin_route(self,c,cfg,path,query,data):
         method=self.command
+        if path.startswith('/api/admin/integrations') or path in ['/api/admin/reset','/api/admin/unfreeze'] or path.startswith('/api/admin/accounts'):
+            self.require_super(c)
+        if re.fullmatch(r'/api/admin/users/[a-f0-9]+/test',path): self.require_super(c)
         if path=='/api/admin/users' and method=='GET':
             q=query.get('q',[''])[0].strip()[:60]
             try: page=max(1,int(query.get('page',['1'])[0]))
@@ -673,6 +706,38 @@ class Handler(BaseHTTPRequestHandler):
             c.execute('UPDATE users SET is_test=? WHERE id=?',(int(enabled),target['id']))
             audit(c,'user.test_toggle',{'user':target['id'],'enabled':enabled})
             return {'ok':True,'id':target['id'],'is_test':int(enabled)}
+        if path=='/api/admin/me':
+            return {'username':(self.admin_user or {}).get('username','admin'),'role':self.admin_role}
+        if path=='/api/admin/accounts':
+            self.require_super(c)
+            if method=='GET':
+                rows=allrows(c,'SELECT id,username,role,enabled,created FROM admin_users ORDER BY created')
+                for r in rows: r['createdAt']=iso(r['created']); r.pop('created',None)
+                return {'accounts':rows}
+            if method=='POST':
+                username=str(data.get('username','')).strip()[:40]; password=str(data.get('password','')); role=str(data.get('role','operator'))
+                if not re.fullmatch(r'[A-Za-z0-9_.-]{3,40}',username): raise Error('用户名格式不正确')
+                if len(password)<8: raise Error('密码至少8位')
+                if role not in ['super','operator']: raise Error('角色无效')
+                if one(c,'SELECT id FROM admin_users WHERE username=?',(username,)): raise Error('用户名已存在',409)
+                aid=uid(); c.execute('INSERT INTO admin_users VALUES(?,?,?,?,1,?)',(aid,username,hash_password(password),role,now()))
+                audit(c,'admin.create',{'username':username,'role':role}); return {'id':aid,'username':username,'role':role,'enabled':1}
+            raise Error('不支持的方法',405)
+        m=re.fullmatch(r'/api/admin/accounts/([a-f0-9]+)',path)
+        if m and method=='PUT':
+            self.require_super(c)
+            target=one(c,'SELECT * FROM admin_users WHERE id=?',(m[1],))
+            if not target: raise Error('账号不存在',404)
+            if self.admin_user and self.admin_user['id']==target['id'] and data.get('enabled') is False: raise Error('不能停用当前账号')
+            role=data.get('role',target['role']); enabled=data.get('enabled',target['enabled'])
+            if role not in ['super','operator']: raise Error('角色无效')
+            password=data.get('password')
+            if password is not None:
+                if len(str(password))<8: raise Error('密码至少8位')
+                c.execute('UPDATE admin_users SET password_hash=? WHERE id=?',(hash_password(password),target['id']))
+            c.execute('UPDATE admin_users SET role=?,enabled=? WHERE id=?',(role,int(bool(enabled)),target['id']))
+            audit(c,'admin.update',{'id':target['id'],'role':role,'enabled':bool(enabled)})
+            return {'ok':True,'id':target['id'],'role':role,'enabled':int(bool(enabled))}
         if path=='/api/admin/dashboard':
             counts={r['type']:r['n'] for r in allrows(c,'SELECT type,COUNT(*) n FROM questions WHERE enabled=1 GROUP BY type')}
             return dict(mode=MODE,frozen=bool(one(c,'SELECT key FROM settings WHERE key="frozen"')),stats=dict(users=c.execute('SELECT COUNT(*) FROM users').fetchone()[0],attempts=c.execute("SELECT COUNT(*) FROM attempts WHERE status='submitted'").fetchone()[0],passed=c.execute('SELECT COUNT(*) FROM attempts WHERE passed=1').fetchone()[0],orders=c.execute('SELECT COUNT(*) FROM orders').fetchone()[0],spentCents=c.execute('SELECT COALESCE(SUM(amountCents),0) FROM orders').fetchone()[0]),warnings=[f'{"单选" if t=="single" else "多选"}题可用数量{counts.get(t,0)}，建议补充' for t in ['single','multiple'] if counts.get(t,0)<50],pendingConfirmations=[k for k,v in cfg['confirmations'].items() if not v])
@@ -719,6 +784,9 @@ class Handler(BaseHTTPRequestHandler):
                 unknown=set(data)-set(cfg)
                 if unknown: raise Error('未知配置字段：'+','.join(unknown))
                 updated={**cfg,**data}
+                protected=['title','organizer','brandSubtitle','shareDesc','themeColor','template','heroImage','homeEyebrow','homeIntro','homeMeta','homeCardTitle','homeCta','homeGiftTitle','footerText','rulesIntro','rulesText','loginTip','resultTip','copy']
+                if self.admin_role!='super' and any(updated.get(k)!=cfg.get(k) for k in protected):
+                    raise Error('个性主题、页面文案和活动名称仅超级管理员可修改',403)
                 for k in ['dailyFree','reviveLimit','passScore','timeLimitSeconds','resumeSeconds','leaderboardLimit','winnerCount','dedupDays','dailyWinLimit','totalWinLimit','budgetCents','dailyBudgetCents']:
                     if type(updated[k]) is not int or updated[k]<0: raise Error(k+'必须为非负整数')
                 if not 1<=updated['passScore']<=100 or updated['resumeSeconds']<60 or updated['dailyFree']<1 or updated['leaderboardLimit']<1: raise Error('配置数值超出范围')

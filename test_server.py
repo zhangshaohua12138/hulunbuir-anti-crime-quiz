@@ -647,6 +647,22 @@ class ServerTests(unittest.TestCase):
         self.assertGreater(self.sql('SELECT COUNT(*) n FROM prizes')[0]['n'],0)
         self.assertTrue(self.sql("SELECT value FROM settings WHERE key='config'"))
 
+    def test_super_and_operator_permissions(self):
+        admin=self.admin()
+        me=self.ok('/api/admin/me',cookie=admin)
+        self.assertEqual(me['role'],'super')
+        created=self.ok('/api/admin/accounts','POST',{'username':'operator1','password':'operator-pass','role':'operator'},admin)
+        self.assertEqual(created['role'],'operator')
+        status,_,headers=admin=self.request('/api/admin/login','POST',{'username':'operator1','password':'operator-pass'})
+        self.assertEqual(status,200)
+        op=headers['Set-Cookie'].split(';')[0]
+        self.assertEqual(self.ok('/api/admin/me',cookie=op)['role'],'operator')
+        cfg=self.ok('/api/admin/config',cookie=op)
+        cfg['themeColor']='#123456'
+        self.assertEqual(self.request('/api/admin/config','PUT',cfg,op)[0],403)
+        self.assertEqual(self.request('/api/admin/integrations',cookie=op)[0],403)
+        self.assertEqual(self.request('/api/admin/accounts',cookie=op)[0],403)
+
     def test_admin_user_directory_is_read_only(self):
         user=self.login('UserA')
         attempt=self.start(user); self.submit(user,attempt)
