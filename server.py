@@ -732,7 +732,7 @@ class Handler(BaseHTTPRequestHandler):
                     if not isinstance(updated[k],str) or len(updated[k])>2000: raise Error('文案过长')
                 for k in ['shareUrl','followUrl']:
                     if updated[k] and not updated[k].startswith('https://'): raise Error('公众号链接须使用https')
-                if updated.get('template') not in ['1','2','3']: raise Error('主题模板无效')
+                if updated.get('template') not in ['1','2','3','4','5','6']: raise Error('主题模板无效')
                 if not re.fullmatch(r'#[0-9A-Fa-f]{6}', updated['themeColor']): raise Error('主题色须为 #RRGGBB')
                 if updated['heroImage'] and not (updated['heroImage'].startswith('/static/') or updated['heroImage'].startswith('https://')): raise Error('背景图须为站内路径或 HTTPS 地址')
                 if one(c,'SELECT key FROM settings WHERE key="frozen"') and any(updated[k]!=cfg[k] for k in ['startAt','endAt','winnerCount','awardDescription','countFailed','countRevived']): raise Error('活动已封榜，不能修改结算参数')
