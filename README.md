@@ -153,3 +153,5 @@ SQLite采用WAL；在线备份应使用 `sqlite3.Connection.backup()`，不要�
 - 告警 Webhook 配置：`/etc/hulunbuir-quiz-monitor.env`
 - 压测：本机 1000 读请求 717 RPS / 0 错误；50 并发写链路 42.2 组/秒 / 0 错误
 - 详细命令见 `docs/运维手册.md`
+
+- 当前活动时间：2026-11-18 至 2026-11-24（7 天）；预算 25900 元，每日 3700 元。
