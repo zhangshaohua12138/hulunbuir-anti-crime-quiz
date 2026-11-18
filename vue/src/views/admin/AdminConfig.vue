@@ -33,6 +33,13 @@ function fromLocalInput(value: string) {
   return value.length === 16 ? `${value}:00+08:00` : value
 }
 
+const durationDays = computed(() => {
+  if (!config.value) return 0
+  const start = new Date(config.value.startAt).getTime()
+  const end = new Date(config.value.endAt).getTime()
+  return Number.isNaN(start) || Number.isNaN(end) ? 0 : Math.max(1, Math.ceil((end - start) / 86400000))
+})
+
 const budgetYuan = computed(() => ((Number(config.value?.budgetCents || 0)) / 100).toFixed(2))
 const dailyYuan = computed(() => ((Number(config.value?.dailyBudgetCents || 0)) / 100).toFixed(2))
 
@@ -100,6 +107,11 @@ async function save() {
           <label>结束时间<input v-model="endLocal" type="datetime-local" /></label>
           <label class="switch-row wide"><input v-model="config.paused" type="checkbox" />暂停活动</label>
         </div>
+        <div class="card-summary">
+          <div><span>活动天数</span><strong>{{ durationDays }} 天</strong></div>
+          <div><span>当前状态</span><strong>{{ stateLabel }}</strong></div>
+          <div><span>每日机会</span><strong>{{ config.dailyFree }} 次</strong></div>
+        </div>
       </section>
 
       <section class="settings-card rules-card">
@@ -140,6 +152,9 @@ async function save() {
         </header>
         <div class="card-fields">
           <label class="wide">复活方式<select v-model="config.shareMode"><option value="manual">人工确认</option><option value="sdk">微信分享</option><option value="free">直接领取</option><option value="disabled">关闭</option></select></label>
+        </div>
+        <div class="share-note">
+          <span>{{ config.shareMode === 'sdk' ? '用户分享到朋友圈后返回页面自动领取。' : config.shareMode === 'manual' ? '用户分享后由运营人工确认发放。' : config.shareMode === 'free' ? '用户无需分享，直接领取复活机会。' : '当前已关闭分享复活入口。' }}</span>
         </div>
       </section>
 

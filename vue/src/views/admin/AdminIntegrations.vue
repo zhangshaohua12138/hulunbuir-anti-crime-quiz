@@ -105,6 +105,9 @@ async function save() {
           <label>公众号 AppSecret<input v-model="form.wechatAppSecret" type="password" placeholder="留空不修改" /></label>
           <label class="wide">OAuth 回调地址<input :value="meta?.callbackUrl" readonly /></label>
         </div>
+        <div class="card-checklist">
+          <span>网页授权 <b>已接入</b></span><span>关注校验 <b>已接入</b></span><span>JS-SDK 分享 <b>已接入</b></span>
+        </div>
       </section>
 
       <section class="integration-card wechat-pay">
