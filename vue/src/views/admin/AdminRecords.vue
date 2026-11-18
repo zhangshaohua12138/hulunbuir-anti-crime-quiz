@@ -149,7 +149,7 @@ function orderActions(row: Record<string, unknown>) {
   <AdminShell active="records" title="记录与发奖" subtitle="查看答题、抽奖和中奖订单，导出对账数据。">
     <p v-if="message" class="notice-bar">{{ message }}</p>
     <section class="card">
-      <div v-if="userId" class="user-filter">当前用户：<strong>{{ userName || userId.slice(0, 12) }}</strong><button type="button" @click="clearUser">清除筛选</button></div>
+      <div v-if="userId" class="user-filter">当前用户：<strong>{{ userName || userId.slice(0, 12) }}</strong><button type="button" class="filter-clear" @click="clearUser">清除筛选</button></div>
       <div class="toolbar">
         <button v-for="item in [{ key: 'orders', label: '中奖订单' }, { key: 'attempts', label: '答题记录' }, { key: 'draws', label: '抽奖记录' }]" :key="item.key" class="btn small" :class="{ secondary: kind !== item.key }" type="button" @click="switchKind(item.key as Kind)">{{ item.label }}</button>
         <span class="spacer" />
