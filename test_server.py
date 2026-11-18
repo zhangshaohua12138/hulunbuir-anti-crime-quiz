@@ -647,6 +647,17 @@ class ServerTests(unittest.TestCase):
         self.assertGreater(self.sql('SELECT COUNT(*) n FROM prizes')[0]['n'],0)
         self.assertTrue(self.sql("SELECT value FROM settings WHERE key='config'"))
 
+    def test_layout_endpoint_is_super_only(self):
+        admin=self.admin()
+        initial=self.ok('/api/admin/layout',cookie=admin)
+        self.assertIsInstance(initial.get('layout'),dict)
+        layout={'version':1,'blocks':[{'id':'hero','type':'hero','visible':True,'props':{}},{'id':'cta','type':'cta','visible':True,'props':{}}]}
+        saved=self.ok('/api/admin/layout','PUT',{'layout':layout},admin)
+        self.assertEqual([b['type'] for b in saved['layout']['blocks']],['hero','cta'])
+        boot=self.ok('/api/bootstrap')
+        self.assertEqual([b['type'] for b in boot['config']['layout']['blocks']],['hero','cta'])
+        self.assertEqual(self.request('/api/admin/layout','PUT',{'layout':layout})[0],401)
+
     def test_nickname_special_characters_are_safe(self):
         self.assertEqual(server.clean_text('A😀\x00\ud800<b>',40),'A😀<b>')
         user=self.login('测试😀<b>')

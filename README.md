@@ -155,3 +155,25 @@ SQLite采用WAL；在线备份应使用 `sqlite3.Connection.backup()`，不要�
 - 详细命令见 `docs/运维手册.md`
 
 - 当前活动时间：2026-11-18 至 2026-11-24（7 天）；预算 25900 元，每日 3700 元。
+
+## Vue 版（开发中）
+
+- 目录：`vue/`
+- 技术栈：Vue 3 + Vite + TypeScript + Pinia + Vue Router
+- 线上预览：https://demo.jevious.top/vue/
+- 布局设计器：https://demo.jevious.top/vue/#/designer
+- 首页由区块 JSON 渲染，支持拖拽排序、显示隐藏、预设布局和保存
+- 后端布局接口：`GET/PUT /api/admin/layout`（仅超级管理员）
+- 开发：
+
+```bash
+cd vue
+pnpm install
+pnpm dev
+```
+
+构建：
+
+```bash
+pnpm build
+```

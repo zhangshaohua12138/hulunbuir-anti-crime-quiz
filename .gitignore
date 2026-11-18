@@ -22,3 +22,6 @@ static/prototype/
 /app-segments.txt
 /*-seg.txt
 /*.zip
+vue/node_modules/
+vue/dist/
+vue/pnpm-debug.log*

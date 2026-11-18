@@ -1,0 +1,77 @@
+export type BlockType =
+  | 'hero'
+  | 'stats'
+  | 'cta'
+  | 'latest'
+  | 'steps'
+  | 'prizes'
+  | 'notice'
+  | 'features'
+  | 'ranking'
+
+export interface LayoutBlock {
+  id: string
+  type: BlockType
+  visible: boolean
+  props: Record<string, unknown>
+}
+
+export interface PageLayout {
+  version: number
+  blocks: LayoutBlock[]
+}
+
+export interface BootConfig {
+  title: string
+  organizer: string
+  brandSubtitle?: string
+  homeEyebrow?: string
+  homeIntro?: string
+  homeMeta?: string
+  homeCardTitle?: string
+  homeCta?: string
+  homeGiftTitle?: string
+  footerText?: string
+  startAt: string
+  endAt: string
+  passScore: number
+  winnerCount: number
+  awardDescription?: string
+  themeColor?: string
+  pageBackground?: string
+  cardBackground?: string
+  headerBackground?: string
+  textColor?: string
+  mutedColor?: string
+  borderColor?: string
+  iconColor?: string
+  buttonTextColor?: string
+  buttonTextAuto?: boolean
+  template?: string
+  layout?: PageLayout
+  copy?: Record<string, string>
+  [key: string]: unknown
+}
+
+export interface BootAccount {
+  freeRemaining: number
+  reviveRemaining: number
+  canRevive: boolean
+  points: number
+}
+
+export interface Bootstrap {
+  mode: string
+  user: null | { id: string; nickname: string; avatar?: string; is_test?: number; rules?: number }
+  config: BootConfig
+  state: string
+  account: BootAccount | null
+  activeAttempt?: unknown
+  latestResult?: unknown
+  prizes?: Array<{ id: string; name: string; type: string; amountCents?: number }>
+}
+
+export interface AdminMe {
+  username: string
+  role: 'super' | 'operator'
+}
