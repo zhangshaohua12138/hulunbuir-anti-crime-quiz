@@ -59,3 +59,14 @@ pnpm build
 - 区块参数编辑（字段显示隐藏、列数、奖品数量）
 - 与现有后台统一登录和权限
 - 原生版稳定后切换主入口
+## 样式分层
+
+```text
+src/styles/tokens.css   设计变量、全局 reset
+src/styles/base.css     共享基础组件：卡片、按钮、弹窗、分页、表单提示
+src/styles/h5.css       移动端页面、首页、答题、抽奖、排行榜、自定义组件
+src/styles/admin.css    管理后台、布局设计器、表格、配置卡片
+src/styles.css          只负责按顺序 import
+```
+
+`tokens` 和 `base` 由移动端和管理端共享；页面样式分开，避免全局类名互相污染。
