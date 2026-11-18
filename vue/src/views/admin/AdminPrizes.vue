@@ -93,8 +93,9 @@ const amount = (prize: Prize) => (prize.type === 'cash' ? `¥ ${(prize.amountCen
       </div>
       <Pagination :page="page" :pages="totalPages" :total="prizes.length" :page-size="pageSize" @update:page="page = $event" @update:page-size="pageSize = $event; page = 1" />
     </section>
-    <form v-if="editing" class="card admin-form" @submit.prevent="save">
-      <h2>{{ form.id ? '编辑奖品' : '新增奖品' }}</h2>
+    <div v-if="editing" class="modal-mask" @click.self="editing = false">
+    <form class="card modal-panel admin-form" @submit.prevent="save">
+      <div class="modal-head"><h2>{{ form.id ? '编辑奖品' : '新增奖品' }}</h2><button type="button" class="modal-close" @click="editing = false">×</button></div>
       <div class="form-grid">
         <label>名称<input v-model="form.name" required /></label>
         <label>类型<select v-model="form.type"><option value="none">未中奖</option><option value="points">积分</option><option value="cash">现金红包</option><option value="physical">实物</option><option value="souvenir">纪念品</option><option value="phone">话费</option></select></label>
@@ -107,5 +108,6 @@ const amount = (prize: Prize) => (prize.type === 'cash' ? `¥ ${(prize.amountCen
       </div>
       <div class="form-actions"><button class="btn secondary" type="button" @click="editing = false">取消</button><button class="btn" type="submit">保存奖品</button></div>
     </form>
+    </div>
   </AdminShell>
 </template>
