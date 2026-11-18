@@ -93,13 +93,15 @@ function reviveModal() {
 }
 function openShareRevive(){
   closeModal();
-  S.shareOverlay=true; S.shareLeft=false; S.shareLeftAt=0; S.shareReviveBusy=false;
-  document.body.insertAdjacentHTML('beforeend',`<div class="share-mask" id="share-mask" role="dialog" aria-modal="true" aria-label="分享复活"><div class="share-arrow"><span class="share-dots">···</span><span class="share-arrow-line">↗</span></div><div class="share-guide"><div class="share-guide-icon">${icon('gift')}</div><div class="eyebrow">分享复活</div><h2>分享到朋友圈<br>获得一次复活机会</h2><p>点击右上角 <b>···</b>，选择「分享到朋友圈」。</p><p class="share-tip">分享完成后返回本页，系统会自动发放复活机会。</p><div class="share-status" id="share-status">等待分享后返回…</div><button class="share-close" data-action="share-close">暂不分享</button></div></div>`);
+  S.shareOverlay=true; S.shareLeft=false; S.shareLeftAt=0; S.shareReviveBusy=false; S.shareGuardPushed=false;
+  try { history.pushState({shareGuard:true},'',location.href); S.shareGuardPushed=true; } catch {}
+  document.body.insertAdjacentHTML('beforeend',`<div class="share-mask" id="share-mask" role="dialog" aria-modal="true" aria-label="分享复活"><div class="share-arrow" aria-hidden="true"><span class="share-arrow-line">↗</span></div><div class="share-guide"><div class="share-guide-icon">${icon('gift')}</div><div class="eyebrow">分享复活</div><h2>分享到朋友圈<br>获得一次复活机会</h2><p>点击右上角 <b>···</b>，选择「分享到朋友圈」。</p><p class="share-tip">分享完成后返回本页，系统会自动发放复活机会。</p><div class="share-status" id="share-status">等待分享后返回…</div><button class="share-close" data-action="share-close">暂不分享</button></div></div>`);
   if(cfg().shareMode==='sdk') setupShare().catch(e=>toast(e.message));
   scheduleShareFallback();
 }
 function closeShareRevive(){
   S.shareOverlay=false; S.shareLeft=false; S.shareReviveBusy=false;
+  if (S.shareGuardPushed) { try { history.replaceState({},'',location.href); } catch {} S.shareGuardPushed=false; }
   document.querySelector('#share-mask')?.remove();
 }
 function completeShareRevive(){
@@ -132,6 +134,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('pageshow',()=>{ if(S.shareOverlay && S.shareLeft) setTimeout(completeShareRevive,700); });
 window.addEventListener('focus',()=>{ if(S.shareOverlay && S.shareLeft) setTimeout(completeShareRevive,700); });
+window.addEventListener('popstate',()=>{ if(!S.shareOverlay) return; try { history.pushState({shareGuard:true},'',location.href); S.shareGuardPushed=true; } catch {} });
 function safeURL(v) { try { const u=new URL(v,location.origin); return ['https:','http:'].includes(u.protocol)?esc(u.href):'#'; } catch {return '#';} }
 async function setupShare() { if(!/MicroMessenger/i.test(navigator.userAgent)) return; const conf=await api(`/api/share/config?url=${encodeURIComponent(location.href.split('#')[0])}`); if(!window.wx) await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://res.wx.qq.com/open/js/jweixin-1.6.0.js';script.onload=resolve;script.onerror=()=>reject(new Error('微信分享组件暂不可用，请使用右上角菜单'));document.head.appendChild(script);}); const {imgUrl,...wxConf}=conf; window.wx.config({...wxConf,jsApiList:['updateAppMessageShareData','updateTimelineShareData','requestMerchantTransfer']}); window.wx.error(err=>console.warn('wx.config',err)); window.wx.ready(()=>{ const data={title:cfg().title,desc:'学法守法，共建平安家园',link:cfg().shareUrl || location.href.split('#')[0]}; if(imgUrl) data.imgUrl=imgUrl; window.wx.updateAppMessageShareData?.(data); window.wx.updateTimelineShareData?.(data); }); }
 async function lottery(id) { try{await refreshBoot();}catch{} S.attempt=await api(`/api/attempts/${idPath(id)}`); const drawn=!!S.attempt.drawn, l=S.attempt.lottery; const wheelPrizes=(S.boot.prizes||[]).slice(0,6); const prizes=wheelPrizes.length?wheelPrizes.map(p=>[p.name,p.type==='none'?'未中奖':p.type==='points'?'直接入账':p.type==='cash'?'微信红包':'奖品']):[['谢谢惠顾','未中奖']]; const labels=prizes.map((p,i)=>`<div class="wheel-label ${i%2===0?'on-red':'on-cream'}" style="--a:${i*60+30}deg">${esc(p[0])}</div>`).join(''); const initial=drawn&&l?`<h3>${esc(l.message)}</h3>${l.prize?`<p class="prize-name">${esc(l.prize)}</p>`:''}<a class="btn" href="#awards">查看记录 →</a>`:`<p class="help">${isDemo()?'演示抽奖，不发放真实红包或实物。':'每套达标成绩仅可抽取一次，重复操作返回原抽奖结果。'}</p>`; shell(`<div class="narrow"><a class="back" href="#result/${esc(id)}">← 返回成绩</a><section class="card center lottery-card"><div class="eyebrow">${esc(copy('lotteryEyebrow','答题有礼'))}</div><h2>${esc(copy('lotteryTitle','答题有礼，好运开启'))}</h2><p class="help">本次 ${S.attempt.score ?? '—'} 分 · ${S.attempt.passed?'已获得抽奖资格':'未获得抽奖资格'}</p><div class="wheel-wrap"><div class="wheel-pointer"></div><div class="wheel" id="wheel">${labels}</div><button class="wheel-center" id="wheel-btn" type="button" data-action="draw" ${(!S.attempt.passed||drawn)?'disabled':''}>${drawn?'已抽奖':'抽奖'}</button></div><div id="draw-result" class="wheel-result">${initial}</div></section></div>`); }
