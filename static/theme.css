@@ -233,3 +233,52 @@ body {
 .pager .help { margin:0; padding:0; height:34px; line-height:34px; align-self:center; }
 
 .test-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff8e9; border:1px solid #efd7a7; color:#7a4c00; border-radius:9px; padding:8px 11px; margin-bottom:10px; font-size:12px; }
+
+/* 个性主题模板：2 红金庆典 */
+body[data-template="2"] .hero {
+  background-image: linear-gradient(110deg, rgba(43,8,15,.96) 0%, rgba(102,19,29,.9) 52%, rgba(150,97,37,.58) 100%), var(--hero-image, url('/static/hero-bg.svg'));
+  border-color: #8c5a25;
+  box-shadow: 0 18px 45px #3a0c1233;
+}
+body[data-template="2"] .hero-copy { max-width: 100%; text-align: center; }
+body[data-template="2"] .hero .eyebrow { color: #f0d6a4; }
+body[data-template="2"] .hero h1 { color: #fff7e8; }
+body[data-template="2"] .hero h1 span { color: #ffd98a; }
+body[data-template="2"] .hero p { color: #f1dcc8; }
+body[data-template="2"] .hero-meta { justify-content: center; color: #edcfaa; }
+body[data-template="2"] .hero-meta span { border-color: #ffffff33; background: #ffffff12; }
+body[data-template="2"] .card { border-color: #e5d2b1; }
+body[data-template="2"] .card-title { color: #7a2a1d; }
+body[data-template="2"] .home-grid { gap: 16px; }
+
+/* 个性主题模板：3 清新青蓝 */
+body[data-template="3"] .hero {
+  background-image: linear-gradient(112deg, #eef9ff 0%, #d9effc 52%, #c8e7f4 100%), var(--hero-image, url('/static/hero-bg.svg'));
+  border-color: #b9dbe7;
+  box-shadow: 0 18px 40px #2f6e8422;
+}
+body[data-template="3"] .hero-copy { max-width: 100%; text-align: center; }
+body[data-template="3"] .hero .eyebrow { color: #2b7087; }
+body[data-template="3"] .hero h1 { color: #123d52; text-shadow: none; }
+body[data-template="3"] .hero h1 span { color: #0f7f8f; }
+body[data-template="3"] .hero p { color: #356276; }
+body[data-template="3"] .hero-meta { justify-content: center; color: #356a7c; }
+body[data-template="3"] .hero-meta span { border-color: #7db8c9; background: #ffffffa8; }
+body[data-template="3"] .card { border-radius: 18px; border-color: #d4e8ee; box-shadow: 0 10px 24px #2d6b7a14; }
+body[data-template="3"] .card-title { color: #14556a; }
+body[data-template="3"] .btn { border-radius: 12px; }
+body[data-template="3"] .site-header { border-bottom-color: #d4e8ee; }
+
+/* 个性主题选择 */
+.template-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.template-option { position:relative; cursor:pointer; }
+.template-option input { position:absolute; opacity:0; pointer-events:none; }
+.template-card { display:flex; flex-direction:column; gap:4px; padding:14px; border:2px solid var(--line); border-radius:12px; background:#fff; min-height:108px; }
+.template-card b { font-size:12px; color:var(--muted); font-weight:600; }
+.template-card strong { font-size:16px; color:var(--ink); }
+.template-card small { font-size:11px; color:var(--muted); }
+.template-card.t1 { border-left:8px solid #123b5d; background:linear-gradient(135deg,#f6fbff,#dcecff); }
+.template-card.t2 { border-left:8px solid #7a2a1d; background:linear-gradient(135deg,#fff8ed,#f6e2c8); }
+.template-card.t3 { border-left:8px solid #2b8493; background:linear-gradient(135deg,#f2fdff,#dcf3f6); }
+.template-option input:checked + .template-card { border-color:var(--red-dark); box-shadow:0 0 0 3px #a9c2ea44; }
+@media (max-width:700px) { .template-grid { grid-template-columns:1fr; } }
