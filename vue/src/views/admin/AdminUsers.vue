@@ -63,17 +63,18 @@ async function toggleTest(user: UserRow) {
     <p v-if="message" class="notice-bar">{{ message }}</p>
     <section class="card">
       <div class="toolbar">
-        <input v-model="search" placeholder="搜索昵称" @keyup.enter="page = 1; load()" />
+        <input v-model="search" placeholder="搜索昵称 / 用户 ID" @keyup.enter="page = 1; load()" />
         <button class="btn small secondary" type="button" @click="page = 1; load()">搜索</button>
         <span class="spacer" /><span class="help">共 {{ total }} 人</span>
       </div>
       <div v-if="loading" class="loading">加载用户…</div>
       <div v-else class="table-scroll">
-        <table class="admin-table">
-          <thead><tr><th>用户</th><th>关注</th><th>答题</th><th>最高分</th><th>订单</th><th>状态</th><th>操作</th></tr></thead>
+        <table class="admin-table users-table">
+          <thead><tr><th>昵称</th><th>用户 ID</th><th>关注</th><th>答题</th><th>最高分</th><th>订单</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
             <tr v-for="user in users" :key="user.id">
-              <td>{{ user.nickname }}<small class="help">{{ user.id.slice(0, 8) }}</small></td>
+              <td class="user-nickname">{{ user.nickname }}</td>
+              <td class="user-id" :title="user.id">{{ user.id.slice(0, 12) }}…</td>
               <td>{{ user.followed ? '已关注' : '未关注' }}</td>
               <td>{{ user.attempts }}</td>
               <td>{{ user.best }}</td>
