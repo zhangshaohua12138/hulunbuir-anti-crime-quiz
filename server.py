@@ -374,7 +374,7 @@ class Handler(BaseHTTPRequestHandler):
     def respond(self,data,status=200,ctype='application/json; charset=utf-8',headers=None):
         body=dumps(data).encode() if ctype.startswith('application/json') else (data.encode() if isinstance(data,str) else data)
         self.send_response(status)
-        self.send_header('Content-Type',ctype); self.send_header('Content-Length',str(len(body))); self.send_header('X-Content-Type-Options','nosniff'); self.send_header('Referrer-Policy','same-origin'); self.send_header('Cache-Control','no-store')
+        self.send_header('Content-Type',ctype); self.send_header('Cache-Control','no-store'); self.send_header('Content-Length',str(len(body))); self.send_header('X-Content-Type-Options','nosniff'); self.send_header('Referrer-Policy','same-origin'); self.send_header('Cache-Control','no-store')
         self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' https://res.wx.qq.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://thirdwx.qlogo.cn; connect-src 'self'; frame-ancestors 'none'")
         for k,v in (headers or {}).items(): self.send_header(k,v)
         self.end_headers(); self.wfile.write(body)

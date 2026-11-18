@@ -10,6 +10,7 @@ const money = v => (Number(v || 0) / 100).toFixed(2);
 const isDemo = () => S.boot?.mode !== 'production';
 function inWeChat() { return /MicroMessenger/i.test(navigator.userAgent); }
 const cfg = () => S.boot?.config || {};
+const PWD_MIN=12;
 function copy(k,fallback){ const v=cfg().copy?.[k]; return (typeof v==='string' && v.trim())?v:fallback; }
 function mixHex(hex, target, weight){
   const h=String(hex||'').replace('#',''); const t=String(target||'').replace('#','');
@@ -123,8 +124,8 @@ async function accountsPage() {
   const d=await api('/api/admin/accounts'); S.data=d.accounts||[];
   adminShell(adminHeading('账号管理','超级管理员可以创建运营账号。运营账号只能使用活动运营配置，不能修改个性主题、微信支付或重置活动。')+`<section class="card"><div class="toolbar"><button class="btn small" data-action="new-account">＋ 新增运营账号</button><span class="spacer"></span><span class="help">共 ${d.accounts.length} 个后台账号</span></div><div class="table-scroll"><table class="admin-table"><thead><tr><th>用户名</th><th>角色</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody>${d.accounts.map(a=>`<tr><td>${esc(a.username)}</td><td>${a.role==='super'?'超级管理员':'运营账号'}</td><td><span class="chip ${a.enabled?'green':''}">${a.enabled?'启用':'停用'}</span></td><td>${date(a.createdAt)}</td><td><div class="inline-buttons"><button class="btn small secondary" data-action="reset-account" data-id="${esc(a.id)}" data-name="${esc(a.username)}">重置密码</button><button class="btn small secondary" data-action="toggle-account" data-id="${esc(a.id)}" data-enabled="${Number(a.enabled)}">${a.enabled?'停用':'启用'}</button></div></td></tr>`).join('')}</tbody></table></div></section>`);
 }
-function resetAccountModal(id,name){ modal('重置密码',`<form id="reset-account-form" data-id="${esc(id)}"><p>账号：${esc(name)}</p><label class="field">新密码<input name="password" type="password" required minlength="12" placeholder="至少 12 位"></label><button class="btn full" type="submit">更新密码</button></form>`); }
-function accountModal(){ modal('新增运营账号',`<form id="account-form"><label class="field">用户名<input name="username" required minlength="3" maxlength="40" placeholder="例如 huodong01"></label><label class="field">初始密码<input name="password" type="password" required minlength="12" placeholder="至少 12 位"></label><label class="field">角色<select name="role"><option value="operator">运营账号（仅活动运营）</option><option value="super">超级管理员</option></select></label><p class="help">运营账号看不到个性主题、微信配置、账号管理和活动重置。密码至少 12 位。</p><button class="btn full" type="submit">创建账号</button></form>`); }
+function resetAccountModal(id,name){ modal('重置密码',`<form id="reset-account-form" data-id="${esc(id)}"><p>账号：${esc(name)}</p><label class="field">新密码<input name="password" type="password" required minlength="${PWD_MIN}" placeholder="至少 ${PWD_MIN} 位"><small>至少 ${PWD_MIN} 位，不能使用纯数字或空密码</small></label><button class="btn full" type="submit">更新密码</button></form>`); }
+function accountModal(){ modal('新增运营账号',`<form id="account-form"><label class="field">用户名<input name="username" required minlength="3" maxlength="40" placeholder="例如 huodong01"></label><label class="field">初始密码<input name="password" type="password" required minlength="${PWD_MIN}" placeholder="至少 ${PWD_MIN} 位"></label><label class="field">角色<select name="role"><option value="operator">运营账号（仅活动运营）</option><option value="super">超级管理员</option></select></label><p class="help">运营账号看不到个性主题、微信配置、账号管理和活动重置。密码至少 ${PWD_MIN} 位。</p><button class="btn full" type="submit">创建账号</button></form>`); }
 async function questionsPage() {
   const params=new URLSearchParams({q:questionFilter.q,page:String(questionFilter.page)});
   const d=await api(`/api/admin/questions?${params}`);
