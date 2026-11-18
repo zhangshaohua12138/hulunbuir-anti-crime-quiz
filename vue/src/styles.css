@@ -401,3 +401,14 @@ p { line-height: 1.75; }
 .upload-button, .slide-upload { position: relative; overflow: hidden; flex: none; border: 1px solid var(--line); border-radius: 6px; background: var(--primary-soft); color: var(--primary-dark); font-size: 9px; padding: 5px 7px; cursor: pointer; white-space: nowrap; }
 .upload-button input, .slide-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .slide-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr) auto auto !important; }
+
+.integration-form { display: grid; gap: 14px; }
+.integration-section { padding: 20px; }
+.integration-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.integration-head h2 { margin: 0 0 4px; font-size: 16px; }
+.integration-head .help { margin: 0; }
+.integration-badge { flex: none; font-size: 10px; color: var(--primary-dark); background: var(--primary-soft); border-radius: 999px; padding: 4px 8px; }
+.integration-section .span-2 { grid-column: span 2; }
+.integration-status { display: flex; gap: 14px; margin-top: 12px; font-size: 10px; color: var(--muted); }
+.integration-actions { position: sticky; bottom: 14px; display: flex; justify-content: flex-end; background: #eef3f9; padding: 10px 0; }
+@media (max-width: 700px) { .integration-section .span-2 { grid-column: span 1; } }
