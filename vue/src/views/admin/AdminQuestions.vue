@@ -22,7 +22,28 @@ const search = ref('')
 const loading = ref(true)
 const message = ref('')
 const editing = ref(false)
+const importing = ref(false)
 const form = reactive<Question>({ type: 'single', stem: '', options: [], answers: [], explanation: '', enabled: true })
+
+async function importExcel(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  importing.value = true
+  message.value = ''
+  try {
+    const form = new FormData()
+    form.append('file', file)
+    const result = await api<{ imported: number }>('/api/admin/questions/import', { method: 'POST', body: form })
+    message.value = `已导入 ${result.imported} 道题`
+    await load()
+  } catch (reason) {
+    message.value = reason instanceof Error ? reason.message : '导入失败'
+  } finally {
+    importing.value = false
+    input.value = ''
+  }
+}
 
 function blank() {
   form.id = undefined
@@ -112,6 +133,8 @@ function answerToggle(id: string) {
         <button class="btn small secondary" type="button" @click="page = 1; load()">搜索</button>
         <span class="spacer" />
         <span class="help">单选 {{ counts.single }} · 多选 {{ counts.multiple }} · 共 {{ total }} 题</span>
+        <a class="btn small secondary" href="/api/admin/questions/template">下载导入模板</a>
+        <label class="btn small secondary file-button">{{ importing ? '导入中…' : '导入 Excel' }}<input type="file" accept=".xlsx" :disabled="importing" @change="importExcel" /></label>
         <button class="btn small" type="button" @click="blank">新增题目</button>
       </div>
       <div v-if="loading" class="loading">加载题库…</div>

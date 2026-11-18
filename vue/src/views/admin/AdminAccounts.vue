@@ -37,6 +37,17 @@ async function create() {
   }
 }
 
+async function resetPassword(account: Account) {
+  const password = window.prompt('输入新密码（至少 12 位）')
+  if (!password) return
+  try {
+    await api(`/api/admin/accounts/${account.id}`, { method: 'PUT', body: JSON.stringify({ password }) })
+    message.value = '密码已更新'
+  } catch (reason) {
+    message.value = reason instanceof Error ? reason.message : '更新失败'
+  }
+}
+
 async function toggle(account: Account) {
   try {
     await api(`/api/admin/accounts/${account.id}`, { method: 'PUT', body: JSON.stringify({ enabled: !account.enabled }) })
@@ -60,7 +71,7 @@ async function toggle(account: Account) {
             <tbody>
               <tr v-for="account in accounts" :key="account.id">
                 <td>{{ account.username }}</td><td>{{ account.role === 'super' ? '超级管理员' : '运营账号' }}</td><td>{{ account.enabled ? '启用' : '停用' }}</td>
-                <td class="row-actions"><button type="button" @click="toggle(account)">{{ account.enabled ? '停用' : '启用' }}</button></td>
+                <td class="row-actions"><button type="button" @click="resetPassword(account)">重置密码</button><button type="button" @click="toggle(account)">{{ account.enabled ? '停用' : '启用' }}</button></td>
               </tr>
             </tbody>
           </table>

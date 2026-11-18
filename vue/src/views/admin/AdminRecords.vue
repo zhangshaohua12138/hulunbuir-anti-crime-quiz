@@ -36,6 +36,29 @@ function switchKind(value: 'orders' | 'attempts' | 'draws') {
   load()
 }
 
+async function updateOrder(row: Record<string, unknown>, status: string) {
+  const tracking = status === 'shipped' ? window.prompt('填写快递单号/发放备注（可留空）') || '' : ''
+  try {
+    await api(`/api/admin/orders/${row.id}`, { method: 'PUT', body: JSON.stringify({ status, tracking }) })
+    message.value = '订单状态已更新'
+    await load()
+  } catch (reason) {
+    message.value = reason instanceof Error ? reason.message : '更新失败'
+  }
+}
+
+function orderActions(row: Record<string, unknown>) {
+  const type = String(row.type || '')
+  const status = String(row.status || '')
+  if (type === 'phone' && status !== 'granted') return [{ label: '登记已发放', status: 'granted' }]
+  if (['physical', 'souvenir'].includes(type)) {
+    if (status === 'pending') return [{ label: '登记发货', status: 'shipped' }]
+    if (status === 'shipped') return [{ label: '确认收货', status: 'received' }, { label: '退回', status: 'returned' }]
+    if (status === 'returned') return [{ label: '重新发货', status: 'shipped' }]
+  }
+  return []
+}
+
 function display(value: unknown) {
   if (value && typeof value === 'object') return JSON.stringify(value)
   if (value === true) return '是'
@@ -59,10 +82,11 @@ function display(value: unknown) {
       <div v-if="loading" class="loading">加载记录…</div>
       <div v-else class="table-scroll">
         <table class="admin-table">
-          <thead><tr><th v-for="column in columns" :key="column">{{ column }}</th></tr></thead>
+          <thead><tr><th v-for="column in columns" :key="column">{{ column }}</th><th v-if="kind === 'orders'">操作</th></tr></thead>
           <tbody>
             <tr v-for="(row, index) in rows" :key="index">
               <td v-for="column in columns" :key="column">{{ display(row[column]) }}</td>
+              <td v-if="kind === 'orders'" class="row-actions"><button v-for="action in orderActions(row)" :key="action.status" type="button" @click="updateOrder(row, action.status)">{{ action.label }}</button></td>
             </tr>
           </tbody>
         </table>

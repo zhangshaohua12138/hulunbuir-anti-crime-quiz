@@ -13,6 +13,7 @@ interface Dashboard {
 
 const data = ref<Dashboard | null>(null)
 const error = ref('')
+const actionMessage = ref('')
 
 onMounted(async () => {
   try {
@@ -23,6 +24,36 @@ onMounted(async () => {
 })
 
 const money = (cents: number) => `¥ ${(cents / 100).toFixed(2)}`
+
+async function reload() {
+  data.value = await api<Dashboard>('/api/admin/dashboard')
+}
+
+async function resetActivity() {
+  const password = window.prompt('输入管理员密码确认重置活动数据')
+  if (!password) return
+  if (!window.confirm('确定清空用户、答题、抽奖和订单数据？')) return
+  try {
+    const result = await api<{ counts: Record<string, number> }>('/api/admin/reset', {
+      method: 'POST',
+      body: JSON.stringify({ confirm: 'RESET', password }),
+    })
+    actionMessage.value = `已重置：用户 ${result.counts.users || 0}，答题 ${result.counts.attempts || 0}`
+    await reload()
+  } catch (reason) {
+    actionMessage.value = reason instanceof Error ? reason.message : '重置失败'
+  }
+}
+
+async function unfreeze() {
+  try {
+    await api('/api/admin/unfreeze', { method: 'POST', body: '{}' })
+    actionMessage.value = '已解除封榜'
+    await reload()
+  } catch (reason) {
+    actionMessage.value = reason instanceof Error ? reason.message : '解除失败'
+  }
+}
 </script>
 
 <template>
@@ -35,6 +66,7 @@ const money = (cents: number) => `¥ ${(cents / 100).toFixed(2)}`
       <div class="admin-metric"><span>中奖订单</span><strong>{{ data.stats.orders }}</strong></div>
       <div class="admin-metric wide"><span>已用红包预算</span><strong>{{ money(data.stats.spentCents) }}</strong></div>
     </div>
+    <p v-if="actionMessage" class="notice-bar">{{ actionMessage }}</p>
     <div v-if="data" class="admin-split">
       <section class="card">
         <h2>快捷操作</h2>
@@ -46,6 +78,14 @@ const money = (cents: number) => `¥ ${(cents / 100).toFixed(2)}`
           <a href="#/designer">首页布局</a>
           <a href="#/admin/users">用户管理</a>
         </div>
+      </section>
+      <section class="card">
+        <h2>活动控制</h2>
+        <div class="control-row">
+          <button class="btn secondary small" type="button" @click="unfreeze" :disabled="!data.frozen">解除封榜</button>
+          <button class="btn secondary small danger" type="button" @click="resetActivity">重置活动数据</button>
+        </div>
+        <p class="help">重置会清空用户、答题、抽奖、订单和榜单，操作不可撤销。</p>
       </section>
       <section class="card">
         <h2>提醒</h2>

@@ -342,3 +342,8 @@ p { line-height: 1.75; }
 .option-letter { width: 26px; height: 26px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--muted); }
 .option-letter.active { background: var(--primary); border-color: var(--primary); color: var(--btn-text); }
 @media (max-width: 900px) { .admin-shell { grid-template-columns: 1fr; } .admin-nav { position: static; height: auto; } .admin-nav nav { grid-template-columns: repeat(2, 1fr); } .admin-main { padding: 16px; } .admin-metrics { grid-template-columns: repeat(2, 1fr); } .admin-split { grid-template-columns: 1fr; } }
+
+.control-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.btn.danger { color: #b42318; border-color: #f0c7c2; background: #fff8f7; }
+.file-button { position: relative; overflow: hidden; cursor: pointer; }
+.file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
