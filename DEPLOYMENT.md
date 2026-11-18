@@ -3,7 +3,7 @@
 ## 当前地址
 
 - 活动页：https://demo.jevious.top/
-- 管理后台：https://demo.jevious.top/admin
+- 管理后台：https://demo.jevious.top/manage-7f3c9a2d
 - 管理员账号：`admin`
 - 管理员密码：部署时通过 `/etc/hulunbuir-quiz.env` 设置，不写入仓库
 - 运行模式：`demo`
@@ -134,4 +134,4 @@ sudo systemctl restart hulunbuir-quiz
 ## 访问限制
 
 - 活动首页 `/` 仅允许微信内置浏览器访问；电脑浏览器打开会显示“请在微信中打开”和公众号二维码。
-- 管理后台单独使用 `/admin`，电脑端可直接访问登录。
+- 管理后台单独使用 `/manage-7f3c9a2d`，电脑端可直接访问登录。

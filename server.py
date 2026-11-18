@@ -10,6 +10,9 @@ from openpyxl import Workbook, load_workbook
 ROOT = Path(__file__).resolve().parent
 DB_PATH = os.environ.get('DATABASE_PATH', str(ROOT / 'data' / 'quiz.db'))
 MODE = os.environ.get('APP_MODE', 'demo')
+ADMIN_PATH = (os.getenv('ADMIN_PATH', '/admin').strip() or '/admin')
+if not ADMIN_PATH.startswith('/'): ADMIN_PATH = '/' + ADMIN_PATH
+ADMIN_PATH = ADMIN_PATH.rstrip('/') or '/admin'
 TZ = timezone(timedelta(hours=8))
 LOCK = threading.RLock()
 
@@ -446,9 +449,9 @@ class Handler(BaseHTTPRequestHandler):
             parsed=urllib.parse.urlsplit(self.path); path=parsed.path; query=urllib.parse.parse_qs(parsed.query)
             if not path.startswith('/api/'):
                 if self.command!='GET': raise Error('不支持的方法',405)
-                if path in ['/','/admin','/admin/'] and path=='/' and not is_wechat_request(self.headers):
+                if path in ['/',ADMIN_PATH,ADMIN_PATH+'/'] and path=='/' and not is_wechat_request(self.headers):
                     return self.respond(wechat_only_page(),ctype='text/html; charset=utf-8')
-                if path in ['/','/admin','/admin/']:
+                if path in ['/',ADMIN_PATH,ADMIN_PATH+'/']:
                     target=ROOT/'static'/'index.html'
                 else:
                     target=ROOT/'static'/(path.removeprefix('/static/').lstrip('/'))
