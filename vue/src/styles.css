@@ -496,3 +496,25 @@ p { line-height: 1.75; }
 .pagination button { border: 1px solid var(--line); background: #fff; color: var(--primary-dark); border-radius: 7px; padding: 5px 9px; font-size: 11px; }
 .pagination button:disabled { opacity: .4; cursor: not-allowed; }
 .pagination-info { min-width: 110px; text-align: center; }
+
+/* Unified small buttons in admin, designer and toolbars */
+.btn.small,
+.admin-shell .btn,
+.designer-shell .btn,
+.login-panel .btn {
+  min-height: 34px;
+  padding: 7px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  line-height: 1.2;
+}
+.admin-shell .btn.full,
+.designer-shell .btn.full {
+  width: 100%;
+}
+.admin-shell .btn.small,
+.designer-shell .btn.small {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 10px;
+}
