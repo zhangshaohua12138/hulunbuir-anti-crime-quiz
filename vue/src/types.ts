@@ -82,3 +82,27 @@ export interface AdminMe {
   username: string
   role: 'super' | 'operator'
 }
+export interface QuizOption {
+  id: string
+  text: string
+}
+
+export interface QuizQuestion {
+  id: string
+  type: 'single' | 'multiple'
+  stem: string
+  options: QuizOption[]
+}
+
+export interface Attempt {
+  id: string
+  questions: QuizQuestion[]
+  answers: Record<string, string[]>
+  deadlineAt: string
+  status: 'active' | 'submitted' | 'expired'
+  score: number
+  passed: boolean
+  revived?: boolean
+  drawn?: boolean
+  lottery?: unknown
+}

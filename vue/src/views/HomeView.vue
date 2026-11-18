@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import HomePreview from '../components/HomePreview.vue'
 import { api } from '../api'
 import { useSession } from '../store'
 import { applyTheme } from '../theme'
 
 const session = useSession()
+const router = useRouter()
 const nickname = ref('')
 const loggingIn = ref(false)
 const message = ref('')
@@ -37,15 +39,22 @@ async function loginDemo() {
   }
 }
 
-function start() {
+async function start() {
   if (!session.boot?.user) {
     void loginDemo()
     return
   }
-  message.value = 'Vue 版答题页正在迁移，当前可先用原生版完成答题。'
-  window.setTimeout(() => {
-    window.location.href = '/#home'
-  }, 600)
+  if (!session.boot.user.rules) {
+    message.value = '请先阅读并同意活动规则，再开始答题。'
+    await router.push('/rules')
+    return
+  }
+  try {
+    const attempt = await api<{ id: string }>('/api/attempts/start', { method: 'POST', body: '{}' })
+    await router.push(`/quiz/${attempt.id}`)
+  } catch (reason) {
+    message.value = reason instanceof Error ? reason.message : '开始答题失败'
+  }
 }
 </script>
 
