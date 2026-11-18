@@ -45,7 +45,7 @@ async function submit() {
           {{ loading ? '登录中…' : '进入设计器' }}
         </button>
       </form>
-      <a class="text-link" href="#/">返回活动首页</a>
+      <a class="text-link" href="/">返回活动首页</a>
     </section>
   </main>
 </template>

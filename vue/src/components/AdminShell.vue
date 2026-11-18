@@ -21,7 +21,6 @@ const nav = computed(() =>
           { key: 'integrations', to: '/admin/integrations', label: '微信配置', icon: '微' },
         ]
       : []),
-    ...(isSuper.value ? [{ key: 'designer', to: '/designer', label: '布局设计', icon: '布' }] : []),
   ],
 )
 
@@ -55,7 +54,7 @@ async function logout() {
           <h1>{{ title }}</h1>
           <p v-if="subtitle" class="help">{{ subtitle }}</p>
         </div>
-        <a class="btn secondary" href="#/">返回活动首页</a>
+        <a class="btn secondary" href="/">返回活动首页</a>
       </header>
       <slot />
     </main>

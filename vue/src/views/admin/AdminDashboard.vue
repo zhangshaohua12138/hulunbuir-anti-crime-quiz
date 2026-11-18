@@ -75,7 +75,7 @@ async function unfreeze() {
           <a href="#/admin/questions">题库管理</a>
           <a href="#/admin/prizes">奖品管理</a>
           <a href="#/admin/records">记录与发奖</a>
-          <a href="#/designer">首页布局</a>
+          <a href="#/admin/config">活动配置</a>
           <a href="#/admin/users">用户管理</a>
         </div>
       </section>

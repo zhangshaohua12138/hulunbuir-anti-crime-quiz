@@ -1,34 +1,19 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from './views/HomeView.vue'
-const DesignerView = () => import('./views/DesignerView.vue')
-const AdminLoginView = () => import('./views/AdminLoginView.vue')
-const QuizView = () => import('./views/QuizView.vue')
-const ResultView = () => import('./views/ResultView.vue')
-const RulesView = () => import('./views/RulesView.vue')
-const LotteryView = () => import('./views/LotteryView.vue')
-const RankingView = () => import('./views/RankingView.vue')
-const AwardsView = () => import('./views/AwardsView.vue')
-const AdminDashboard = () => import('./views/admin/AdminDashboard.vue')
-const AdminConfig = () => import('./views/admin/AdminConfig.vue')
-const AdminQuestions = () => import('./views/admin/AdminQuestions.vue')
-const AdminPrizes = () => import('./views/admin/AdminPrizes.vue')
-const AdminUsers = () => import('./views/admin/AdminUsers.vue')
-const AdminRecords = () => import('./views/admin/AdminRecords.vue')
-const AdminAccounts = () => import('./views/admin/AdminAccounts.vue')
-const AdminIntegrations = () => import('./views/admin/AdminIntegrations.vue')
+import AdminLoginView from './views/AdminLoginView.vue'
+import AdminDashboard from './views/admin/AdminDashboard.vue'
+import AdminConfig from './views/admin/AdminConfig.vue'
+import AdminQuestions from './views/admin/AdminQuestions.vue'
+import AdminPrizes from './views/admin/AdminPrizes.vue'
+import AdminUsers from './views/admin/AdminUsers.vue'
+import AdminRecords from './views/admin/AdminRecords.vue'
+import AdminAccounts from './views/admin/AdminAccounts.vue'
+import AdminIntegrations from './views/admin/AdminIntegrations.vue'
 import { useSession } from './store'
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', component: HomeView },
-    { path: '/rules', component: RulesView },
-    { path: '/quiz/:id', component: QuizView },
-    { path: '/result/:id', component: ResultView },
-    { path: '/lottery/:id', component: LotteryView },
-    { path: '/ranking', component: RankingView },
-    { path: '/winners', component: RankingView },
-    { path: '/awards', component: AwardsView },
+    { path: '/', redirect: '/admin' },
     { path: '/admin', component: AdminDashboard, meta: { admin: true } },
     { path: '/admin/config', component: AdminConfig, meta: { admin: true } },
     { path: '/admin/questions', component: AdminQuestions, meta: { admin: true } },
@@ -37,8 +22,8 @@ const router = createRouter({
     { path: '/admin/records', component: AdminRecords, meta: { admin: true } },
     { path: '/admin/accounts', component: AdminAccounts, meta: { admin: true, super: true } },
     { path: '/admin/integrations', component: AdminIntegrations, meta: { admin: true, super: true } },
-    { path: '/designer', component: DesignerView, meta: { admin: true, super: true } },
     { path: '/login', component: AdminLoginView },
+    { path: '/:pathMatch(.*)*', redirect: '/admin' },
   ],
 })
 
@@ -50,7 +35,7 @@ router.beforeEach(async (to) => {
     if (to.meta.super && session.admin?.role !== 'super') return { path: '/admin' }
     return true
   } catch {
-    return { path: '/login', query: { next: to.fullPath } }
+    return { path: '/login' }
   }
 })
 
