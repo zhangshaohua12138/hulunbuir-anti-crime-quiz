@@ -16,6 +16,13 @@ export interface LayoutBlock {
   props: Record<string, unknown>
 }
 
+export interface LayoutTemplate {
+  id: string
+  name: string
+  layout: PageLayout
+  createdAt?: number
+}
+
 export interface PageLayout {
   version: number
   blocks: LayoutBlock[]

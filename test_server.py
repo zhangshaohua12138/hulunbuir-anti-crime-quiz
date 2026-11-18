@@ -658,6 +658,18 @@ class ServerTests(unittest.TestCase):
         self.assertEqual([b['type'] for b in boot['config']['layout']['blocks']],['hero','cta'])
         self.assertEqual(self.request('/api/admin/layout','PUT',{'layout':layout})[0],401)
 
+    def test_layout_templates_crud(self):
+        admin=self.admin()
+        layout={'version':1,'blocks':[{'id':'hero','type':'hero','visible':True,'props':{}}]}
+        created=self.ok('/api/admin/layout/templates','POST',{'name':'我的模板','layout':layout},admin)
+        tid=created['template']['id']
+        self.assertEqual(len(created['templates']),1)
+        listing=self.ok('/api/admin/layout',cookie=admin)
+        self.assertEqual(listing['templates'][0]['name'],'我的模板')
+        deleted=self.ok('/api/admin/layout/templates/'+tid,'DELETE',{},admin)
+        self.assertEqual(deleted['templates'],[])
+        self.assertEqual(self.request('/api/admin/layout/templates','POST',{'name':'x','layout':layout})[0],401)
+
     def test_nickname_special_characters_are_safe(self):
         self.assertEqual(server.clean_text('A😀\x00\ud800<b>',40),'A😀<b>')
         user=self.login('测试😀<b>')

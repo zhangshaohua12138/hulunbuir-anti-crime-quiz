@@ -181,3 +181,14 @@ p { line-height: 1.75; }
   .designer-panel { position: static; }
   .phone-frame { height: 560px; }
 }
+.template-save { display: flex; gap: 6px; margin-bottom: 8px; }
+.template-save input { flex: 1; min-width: 0; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; font-size: 11px; }
+.template-save button, .saved-template-delete { border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--primary-dark); font-size: 10px; padding: 4px 6px; }
+.saved-template { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
+.saved-template-name { flex: 1; text-align: left; border: 0; background: transparent; color: var(--ink); font-size: 12px; padding: 4px 2px; }
+.saved-template-name:hover { color: var(--primary-dark); text-decoration: underline; }
+.saved-template-delete { color: #b42318; }
+
+.theme-color-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; font-size: 11px; color: var(--muted); }
+.theme-color-row input[type="color"] { width: 38px; height: 26px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.theme-color-row + .check-row { margin-top: 10px; margin-bottom: 10px; }
