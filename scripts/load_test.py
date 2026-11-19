@@ -16,7 +16,7 @@ ORIGIN = os.environ.get('LOAD_ORIGIN', 'https://demo.jevious.top')
 
 
 def request(method, path, body=None, cookie=None):
-    conn = http.client.HTTPConnection(HOST, PORT, timeout=15)
+    conn = http.client.HTTPConnection(HOST, PORT, timeout=float(os.getenv('LOAD_TIMEOUT', '15')))
     headers = {'Accept': 'application/json', 'Origin': ORIGIN}
     raw = None
     if body is not None:
