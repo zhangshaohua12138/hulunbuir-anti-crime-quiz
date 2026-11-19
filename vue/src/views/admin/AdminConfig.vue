@@ -206,6 +206,7 @@ async function save() {
   try {
     config.value.startAt = fromLocalInput(startLocal.value)
     config.value.endAt = fromLocalInput(endLocal.value)
+    applyTextDefaults(config.value)
     config.value = await api<Record<string, any>>('/api/admin/config', {
       method: 'PUT',
       body: JSON.stringify(config.value),
