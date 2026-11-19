@@ -85,9 +85,6 @@ const copyGroups: Array<{ title: string; fields: CopyField[] }> = [
     fields: [
       { key: 'title', label: '活动名称（左上角标题）', top: true },
       { key: 'brandSubtitle', label: '品牌副标题', top: true },
-      { key: 'shareTitle', label: '微信分享标题', top: true },
-      { key: 'shareDesc', label: '微信分享描述', top: true },
-      { key: 'shareUrl', label: '微信分享链接', top: true, placeholder: '留空使用当前活动页' },
       { key: 'homeEyebrow', label: '首页眉题', top: true },
       { key: 'homeIntro', label: '首页主说明', top: true },
       { key: 'homeMeta', label: '首页底部短句', top: true },
@@ -318,6 +315,20 @@ async function save() {
         <div class="card-fields">
           <label class="wide">评优与奖品说明<textarea v-model="config.awardDescription" rows="4" /></label>
         </div>
+      </section>
+
+      <section v-if="isSuper" class="settings-card share-config-card wide-card">
+        <header class="card-head">
+          <span class="card-icon">享</span>
+          <div class="card-heading"><h2>微信分享设置</h2><p>微信右上角分享给朋友/朋友圈时的标题、描述和打开链接</p></div>
+          <span class="card-state">JS-SDK</span>
+        </header>
+        <div class="card-fields">
+          <label>分享标题<input v-model="config.shareTitle" placeholder="留空使用活动名称" /></label>
+          <label>分享描述<input v-model="config.shareDesc" placeholder="留空使用默认描述" /></label>
+          <label class="wide">分享链接<input v-model="config.shareUrl" placeholder="留空使用当前活动页；填写时须为 HTTPS" /></label>
+        </div>
+        <div class="card-foot"><span>公众号后台需配置 JS 接口安全域名</span><span>分享链接留空使用当前页</span></div>
       </section>
 
       <section v-if="isSuper" class="settings-card copy-card wide-card">
