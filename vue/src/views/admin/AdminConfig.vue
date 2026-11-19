@@ -18,6 +18,7 @@ const copyGroups: Array<{ title: string; fields: CopyField[] }> = [
   {
     title: '首页与通用',
     fields: [
+      { key: 'title', label: '活动名称（左上角标题）', top: true },
       { key: 'brandSubtitle', label: '品牌副标题', top: true },
       { key: 'shareDesc', label: '分享描述', top: true },
       { key: 'homeEyebrow', label: '首页眉题', top: true },

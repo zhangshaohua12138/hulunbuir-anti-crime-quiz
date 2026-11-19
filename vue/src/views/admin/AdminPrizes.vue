@@ -110,7 +110,7 @@ const amount = (prize: Prize) => (prize.type === 'cash' ? `¥ ${(prize.amountCen
       <div class="modal-head"><h2>{{ form.id ? '编辑奖品' : '新增奖品' }}</h2><button type="button" class="modal-close" @click="editing = false">×</button></div>
       <div class="form-grid">
         <label>名称<input v-model="form.name" required /></label>
-        <label>类型<select v-model="form.type"><option value="none">未中奖</option><option value="points">积分</option><option value="cash">现金红包</option><option value="physical">实物</option><option value="souvenir">纪念品</option><option value="phone">话费</option></select></label>
+        <label>类型<select v-model="form.type"><option value="none">未中奖</option><option value="points">积分</option><option value="cash">现金红包</option></select></label>
         <label>金额（分）<input v-model.number="form.amountCents" type="number" min="0" /></label>
         <label>积分值<input v-model.number="form.points" type="number" min="0" /></label>
         <label>总库存<input v-model.number="form.stock" type="number" min="0" /></label>

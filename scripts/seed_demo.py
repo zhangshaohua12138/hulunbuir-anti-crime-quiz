@@ -30,16 +30,6 @@ def clean_seed():
     c.execute("DELETE FROM prizes WHERE name='演示纪念品'")
 
 
-def demo_prize():
-    row = c.execute("SELECT id FROM prizes WHERE name='演示纪念品'").fetchone()
-    if row:
-        return row['id']
-    pid = uid()
-    c.execute("INSERT INTO prizes(id,name,type,amountCents,stock,dailyLimit,weight,enabled,points) VALUES(?,?,?,?,?,?,?,1,0)",
-              (pid, '演示纪念品', 'physical', 0, 50, 10, 0))
-    return pid
-
-
 def build_attempt(user_id, index, score):
     qs = [json.loads(r['payload']) for r in c.execute("SELECT payload FROM questions WHERE enabled=1 ORDER BY rowid LIMIT 10")]
     # pick the first n questions correct; derive score from question types
@@ -66,7 +56,6 @@ def build_attempt(user_id, index, score):
 
 
 clean_seed()
-physical_id = demo_prize()
 point_prizes = [r['id'] for r in c.execute("SELECT id FROM prizes WHERE type='points' AND enabled=1 ORDER BY points")]
 names = ['演示-平安志愿者', '演示-社区网格员', '演示-政法小课堂', '演示-法治宣传员', '演示-平安家庭', '演示-答题达人',
          '演示-呼伦贝尔市民', '演示-海拉尔居民', '演示-满洲里居民', '演示-牙克石居民', '演示-扎兰屯居民', '演示-额尔古纳居民']
@@ -81,14 +70,9 @@ for index, name in enumerate(names):
         prize = c.execute('SELECT * FROM prizes WHERE id=?', (pid,)).fetchone()
         did = uid()
         c.execute('INSERT INTO draws VALUES(?,?,?,?,?,?,?,?)', (did, user_id, attempt_id, pid, now - index * 60, today, 1, '恭喜中奖，感谢参与'))
-        if True:
-            oid = uid()
-            c.execute('INSERT INTO orders(id,draw_id,user_id,prize_id,prize_name,type,amountCents,created,day,status,recipient,tracking,failure,tries,provider_id,source) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                      (oid, did, user_id, pid, prize['name'], 'points', 0, now - index * 60, today, 'granted', '{}', '', '', 0, '', 'lottery'))
-    if index in (3, 4):
         oid = uid()
         c.execute('INSERT INTO orders(id,draw_id,user_id,prize_id,prize_name,type,amountCents,created,day,status,recipient,tracking,failure,tries,provider_id,source) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                  (oid, 'demo-physical-' + oid, user_id, physical_id, '演示纪念品', 'physical', 0, now - 300, today, 'pending' if index == 3 else 'shipped', '{}', 'DEMO-TRACK-001' if index == 4 else '', '', 0, '', 'lottery'))
+                  (oid, did, user_id, pid, prize['name'], 'points', 0, now - index * 60, today, 'granted', '{}', '', '', 0, '', 'lottery'))
 c.commit()
 print('demo users:', c.execute("SELECT COUNT(*) FROM users WHERE openid LIKE 'demo-seed-%'").fetchone()[0])
 print('demo attempts:', c.execute("SELECT COUNT(*) FROM attempts a JOIN users u ON u.id=a.user_id WHERE u.openid LIKE 'demo-seed-%'").fetchone()[0])
