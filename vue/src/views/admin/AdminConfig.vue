@@ -10,6 +10,7 @@ const config = ref<Record<string, any> | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 const message = ref('')
+const saveError = ref(false)
 const startLocal = ref('')
 const endLocal = ref('')
 
@@ -201,6 +202,7 @@ async function save() {
   if (!config.value) return
   saving.value = true
   message.value = ''
+  saveError.value = false
   try {
     config.value.startAt = fromLocalInput(startLocal.value)
     config.value.endAt = fromLocalInput(endLocal.value)
@@ -211,9 +213,10 @@ async function save() {
     applyTextDefaults(config.value)
     startLocal.value = toLocalInput(String(config.value.startAt || ''))
     endLocal.value = toLocalInput(String(config.value.endAt || ''))
-    message.value = '活动配置已保存'
+    message.value = '活动配置已保存，移动端刷新页面后生效'
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : '保存失败'
+    saveError.value = true
   } finally {
     saving.value = false
   }
@@ -335,7 +338,7 @@ async function save() {
       </section>
 
       <div class="settings-save">
-        <div><strong>保存后立即生效</strong><p class="help">修改活动时间或预算前，请确认当前活动状态和资金安排。</p></div>
+        <div><strong>保存后立即生效</strong><p class="help">修改活动时间或预算前，请确认当前活动状态和资金安排。</p><p v-if="message" class="save-feedback" :class="{ error: saveError }" aria-live="polite">{{ message }}</p></div>
         <button class="btn" type="submit" :disabled="saving">{{ saving ? '保存中…' : '保存活动配置' }}</button>
       </div>
     </form>

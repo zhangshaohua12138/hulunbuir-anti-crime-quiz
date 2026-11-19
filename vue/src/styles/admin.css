@@ -397,3 +397,7 @@
 .copy-group h3 { margin: 0 0 8px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--muted); }
 .copy-group:first-child h3 { border-top: 0; padding-top: 0; }
 
+
+.save-feedback { margin: 8px 0 0; color: #2f7a55; font-size: 11px; font-weight: 600; }
+.save-feedback.error { color: #b42318; }
+
