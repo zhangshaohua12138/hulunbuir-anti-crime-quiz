@@ -186,6 +186,8 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],176)
         board=self.ok('/api/leaderboard',cookie=user)
         self.assertEqual(board['rows'][0]['points'],176)
+        user_id=self.ok('/api/bootstrap',cookie=user)['user']['id']
+        self.assertEqual(board['rows'][0]['totalSeconds'],sum(r['seconds'] for r in self.sql('SELECT seconds FROM attempts WHERE user_id=?',(user_id,))))
 
     def test_question_shortage_does_not_create_attempt(self):
         user=self.login()
