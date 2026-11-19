@@ -53,6 +53,7 @@ const copyDefaults: Record<string, string> = {
 const topDefaults: Record<string, string> = {
   title: '呼伦贝尔市深化扫黑除恶专项斗争有奖竞答活动',
   brandSubtitle: '全民参与 · 共建平安',
+  shareTitle: '呼伦贝尔市深化扫黑除恶专项斗争有奖竞答活动',
   shareDesc: '学到知识，守护平安家园',
   homeEyebrow: '深化扫黑除恶 · 共建平安家园',
   homeIntro: '让法治精神深入人心，让平安建设与你同行。',
@@ -84,7 +85,9 @@ const copyGroups: Array<{ title: string; fields: CopyField[] }> = [
     fields: [
       { key: 'title', label: '活动名称（左上角标题）', top: true },
       { key: 'brandSubtitle', label: '品牌副标题', top: true },
-      { key: 'shareDesc', label: '分享描述', top: true },
+      { key: 'shareTitle', label: '微信分享标题', top: true },
+      { key: 'shareDesc', label: '微信分享描述', top: true },
+      { key: 'shareUrl', label: '微信分享链接', top: true, placeholder: '留空使用当前活动页' },
       { key: 'homeEyebrow', label: '首页眉题', top: true },
       { key: 'homeIntro', label: '首页主说明', top: true },
       { key: 'homeMeta', label: '首页底部短句', top: true },
@@ -330,7 +333,7 @@ async function save() {
               <label v-for="field in group.fields" :key="field.key" :class="{ wide: field.textarea }">
                 {{ field.label }}
                 <textarea v-if="field.textarea" v-model="config[field.key]" rows="3" placeholder="留空使用默认规则" />
-                <input v-else-if="field.top" v-model="config[field.key]" placeholder="留空则不显示" />
+                <input v-else-if="field.top" v-model="config[field.key]" :placeholder="field.placeholder || '留空则不显示'" />
                 <input v-else v-model="config.copy[field.key]" placeholder="留空则不显示" />
               </label>
             </div>
