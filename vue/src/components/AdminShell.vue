@@ -19,6 +19,7 @@ const nav = computed(() =>
       ? [
           { key: 'accounts', to: '/admin/accounts', label: '账号管理', icon: '账' },
           { key: 'integrations', to: '/admin/integrations', label: '微信配置', icon: '微' },
+          { key: 'designer', to: '/designer', label: '布局设计', icon: '布' },
         ]
       : []),
   ],

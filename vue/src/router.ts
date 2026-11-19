@@ -8,6 +8,7 @@ import AdminUsers from './views/admin/AdminUsers.vue'
 import AdminRecords from './views/admin/AdminRecords.vue'
 import AdminAccounts from './views/admin/AdminAccounts.vue'
 import AdminIntegrations from './views/admin/AdminIntegrations.vue'
+import DesignerView from './views/DesignerView.vue'
 import { useSession } from './store'
 
 const router = createRouter({
@@ -22,6 +23,7 @@ const router = createRouter({
     { path: '/admin/records', component: AdminRecords, meta: { admin: true } },
     { path: '/admin/accounts', component: AdminAccounts, meta: { admin: true, super: true } },
     { path: '/admin/integrations', component: AdminIntegrations, meta: { admin: true, super: true } },
+    { path: '/designer', component: DesignerView, meta: { admin: true, super: true } },
     { path: '/login', component: AdminLoginView },
     { path: '/:pathMatch(.*)*', redirect: '/admin' },
   ],
