@@ -44,7 +44,7 @@ async function load() {
 }
 
 function edit(prize?: Prize) {
-  Object.assign(form, prize ? { ...prize } : { id: undefined, name: '', type: 'none', amountCents: 0, stock: 1, dailyLimit: 1, weight: 1, enabled: true, points: 0 })
+  Object.assign(form, prize ? { ...prize, enabled: Boolean(prize.enabled) } : { id: undefined, name: '', type: 'none', amountCents: 0, stock: 1, dailyLimit: 1, weight: 1, enabled: true, points: 0 })
   editing.value = true
 }
 
