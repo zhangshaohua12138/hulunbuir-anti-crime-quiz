@@ -2,13 +2,90 @@
 import { computed, onMounted, ref } from 'vue'
 import AdminShell from '../../components/AdminShell.vue'
 import { api } from '../../api'
+import { useSession } from '../../store'
 
+const session = useSession()
+const isSuper = computed(() => session.admin?.role === 'super')
 const config = ref<Record<string, any> | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 const message = ref('')
 const startLocal = ref('')
 const endLocal = ref('')
+
+interface CopyField { key: string; label: string; placeholder?: string; top?: boolean; textarea?: boolean }
+const copyGroups: Array<{ title: string; fields: CopyField[] }> = [
+  {
+    title: '首页与通用',
+    fields: [
+      { key: 'brandSubtitle', label: '品牌副标题', top: true },
+      { key: 'shareDesc', label: '分享描述', top: true },
+      { key: 'homeEyebrow', label: '首页眉题', top: true },
+      { key: 'homeIntro', label: '首页主说明', top: true },
+      { key: 'homeMeta', label: '首页底部短句', top: true },
+      { key: 'homeCardTitle', label: '机会卡片标题', top: true },
+      { key: 'homeCta', label: '开始答题按钮文案', top: true },
+      { key: 'homeGiftTitle', label: '奖品卡片标题', top: true },
+      { key: 'rulesIntro', label: '规则页引导语', top: true },
+      { key: 'footerText', label: '页脚标语', top: true },
+      { key: 'loginTitle', label: '登录弹窗标题' },
+      { key: 'loginTip', label: '登录弹窗提示', top: true },
+      { key: 'resultTip', label: '结果页补充提示', top: true },
+      { key: 'rulesText', label: '活动规则正文（留空使用默认规则）', top: true, textarea: true },
+    ],
+  },
+  {
+    title: '答题页',
+    fields: [
+      { key: 'quizSingle', label: '单选题标签' },
+      { key: 'quizMulti', label: '多选题标签' },
+      { key: 'quizNext', label: '下一题按钮' },
+      { key: 'quizSubmit', label: '交卷按钮' },
+      { key: 'quizHelpSingle', label: '单选题提示' },
+      { key: 'quizHelpMulti', label: '多选题提示' },
+    ],
+  },
+  {
+    title: '结果页',
+    fields: [
+      { key: 'resultEyebrow', label: '结果页眉题' },
+      { key: 'resultExpiredEyebrow', label: '过期结果眉题' },
+      { key: 'resultPassTitle', label: '达标结果标题' },
+      { key: 'resultFailTitle', label: '未达标结果标题' },
+      { key: 'resultExpiredTitle', label: '过期结果标题' },
+      { key: 'resultPassTip', label: '达标提示' },
+      { key: 'resultDrawnTip', label: '已抽奖提示' },
+      { key: 'resultFailTip', label: '未达标提示' },
+      { key: 'resultExpiredTip', label: '过期提示' },
+      { key: 'resultRankingButton', label: '查看排行榜按钮' },
+      { key: 'resultHomeButton', label: '返回首页按钮' },
+    ],
+  },
+  {
+    title: '抽奖与榜单',
+    fields: [
+      { key: 'lotteryEyebrow', label: '抽奖页眉题' },
+      { key: 'lotteryTitle', label: '抽奖页标题' },
+      { key: 'rankingEyebrow', label: '排行榜眉题' },
+      { key: 'rankingTitle', label: '排行榜标题' },
+      { key: 'rankingIntro', label: '排行榜说明' },
+      { key: 'rankingEmpty', label: '排行榜空状态' },
+      { key: 'rankingHelp', label: '排行榜底部说明' },
+      { key: 'winnersEyebrow', label: '获奖公示眉题' },
+      { key: 'winnersTitle', label: '获奖公示标题' },
+      { key: 'winnersIntro', label: '获奖公示说明' },
+    ],
+  },
+  {
+    title: '我的奖品',
+    fields: [
+      { key: 'awardsEyebrow', label: '我的奖品眉题' },
+      { key: 'awardsTitle', label: '我的奖品标题' },
+      { key: 'awardsIntro', label: '我的奖品说明' },
+      { key: 'awardsEmpty', label: '我的奖品空状态' },
+    ],
+  },
+]
 
 const configured = computed(() => Boolean(config.value))
 const stateLabel = computed(() => {
@@ -46,6 +123,12 @@ const dailyYuan = computed(() => ((Number(config.value?.dailyBudgetCents || 0)) 
 onMounted(async () => {
   try {
     config.value = await api<Record<string, any>>('/api/admin/config')
+    if (!config.value.copy) config.value.copy = {}
+    for (const group of copyGroups) {
+      for (const field of group.fields) {
+        if (!field.top && config.value.copy[field.key] === undefined) config.value.copy[field.key] = ''
+      }
+    }
     startLocal.value = toLocalInput(String(config.value.startAt || ''))
     endLocal.value = toLocalInput(String(config.value.endAt || ''))
   } catch (reason) {
@@ -167,6 +250,27 @@ async function save() {
         </header>
         <div class="card-fields">
           <label class="wide">评优与奖品说明<textarea v-model="config.awardDescription" rows="4" /></label>
+        </div>
+      </section>
+
+      <section v-if="isSuper" class="settings-card copy-card wide-card">
+        <header class="card-head">
+          <span class="card-icon">文</span>
+          <div class="card-heading"><h2>移动端页面文案</h2><p>对应原生 H5 的首页、答题、结果、抽奖、榜单和领奖页文字；留空使用默认文案。</p></div>
+          <span class="card-state">超级管理员</span>
+        </header>
+        <div class="copy-groups">
+          <div v-for="group in copyGroups" :key="group.title" class="copy-group">
+            <h3>{{ group.title }}</h3>
+            <div class="card-fields">
+              <label v-for="field in group.fields" :key="field.key" :class="{ wide: field.textarea }">
+                {{ field.label }}
+                <textarea v-if="field.textarea" v-model="config[field.key]" rows="3" placeholder="留空使用默认规则" />
+                <input v-else-if="field.top" v-model="config[field.key]" placeholder="留空使用默认" />
+                <input v-else v-model="config.copy[field.key]" placeholder="留空使用默认" />
+              </label>
+            </div>
+          </div>
         </div>
       </section>
 

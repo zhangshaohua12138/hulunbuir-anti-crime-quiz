@@ -50,7 +50,8 @@ function edit(prize?: Prize) {
 
 async function save() {
   try {
-    await api('/api/admin/prizes', { method: 'POST', body: JSON.stringify(form) })
+    const endpoint = form.id ? `/api/admin/prizes/${form.id}` : '/api/admin/prizes'
+    await api(endpoint, { method: 'POST', body: JSON.stringify(form) })
     editing.value = false
     message.value = '奖品已保存'
     await load()
@@ -61,10 +62,21 @@ async function save() {
 
 async function toggle(prize: Prize) {
   try {
-    await api('/api/admin/prizes', { method: 'POST', body: JSON.stringify({ ...prize, enabled: !prize.enabled }) })
+    await api(`/api/admin/prizes/${prize.id}`, { method: 'POST', body: JSON.stringify({ ...prize, enabled: !prize.enabled }) })
     await load()
   } catch (reason) {
     message.value = reason instanceof Error ? reason.message : '操作失败'
+  }
+}
+
+async function remove(prize: Prize) {
+  if (!window.confirm(`确定删除奖品“${prize.name}”吗？已产生发放记录的奖品不能删除。`)) return
+  try {
+    await api(`/api/admin/prizes/${prize.id}`, { method: 'DELETE' })
+    message.value = '奖品已删除'
+    await load()
+  } catch (reason) {
+    message.value = reason instanceof Error ? reason.message : '删除失败'
   }
 }
 
@@ -86,7 +98,7 @@ const amount = (prize: Prize) => (prize.type === 'cash' ? `¥ ${(prize.amountCen
               <td>{{ prize.name }}</td><td>{{ typeName(prize.type) }}</td><td>{{ amount(prize) }}</td>
               <td>{{ prize.issued || 0 }} / {{ prize.stock }}</td><td>{{ prize.dailyLimit }}</td><td>{{ prize.weight }}</td>
               <td>{{ prize.enabled ? '启用' : '停用' }}</td>
-              <td class="row-actions"><button type="button" @click="edit(prize)">编辑</button><button type="button" @click="toggle(prize)">{{ prize.enabled ? '停用' : '启用' }}</button></td>
+              <td class="row-actions"><button type="button" @click="edit(prize)">编辑</button><button type="button" @click="toggle(prize)">{{ prize.enabled ? '停用' : '启用' }}</button><button type="button" class="danger-link" @click="remove(prize)">删除</button></td>
             </tr>
           </tbody>
         </table>

@@ -388,3 +388,12 @@
 .admin-table td.table-actions { vertical-align: middle; white-space: nowrap; }
 .table-actions .row-actions { display: flex; align-items: center; justify-content: flex-start; gap: 4px; flex-wrap: nowrap; }
 .records-table .table-actions { padding-top: 0; padding-bottom: 0; }
+
+.danger-link { color: #b42318; }
+.danger-link:hover { color: #7a1a12; }
+
+
+.copy-groups { display: grid; gap: 18px; padding: 0 18px 18px; }
+.copy-group h3 { margin: 0 0 8px; padding-top: 10px; border-top: 1px dashed var(--line); font-size: 11px; color: var(--muted); }
+.copy-group:first-child h3 { border-top: 0; padding-top: 0; }
+

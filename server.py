@@ -985,6 +985,11 @@ class Handler(BaseHTTPRequestHandler):
             c.execute('INSERT INTO questions VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET type=excluded.type,stem=excluded.stem,payload=excluded.payload,enabled=excluded.enabled',(q['id'],q['type'],q['stem'],dumps(q),int(q['enabled']))); return q
         m=re.fullmatch(r'/api/admin/prizes(?:/([a-f0-9]+))?',path)
         if m:
+            if method=='DELETE':
+                if not m[1] or not one(c,'SELECT id FROM prizes WHERE id=?',(m[1],)): raise Error('奖品不存在',404)
+                used=c.execute('SELECT (SELECT COUNT(*) FROM draws WHERE prize_id=?)+(SELECT COUNT(*) FROM orders WHERE prize_id=?)',(m[1],m[1])).fetchone()[0]
+                if used: raise Error('该奖品已有抽奖或发放记录，不能删除，请改为停用')
+                c.execute('DELETE FROM prizes WHERE id=?',(m[1],)); audit(c,'prize.delete',{'id':m[1]}); return {'ok':True}
             if method=='GET':
                 prizes=allrows(c,'SELECT * FROM prizes')
                 for p in prizes:

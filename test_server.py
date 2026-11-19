@@ -787,6 +787,16 @@ class ServerTests(unittest.TestCase):
         status,body,_=self.request('/api/admin/integrations','PUT',{'wechatAppId':'bad'},admin)
         self.assertEqual(status,400,body)
 
+    def test_admin_prize_toggle_and_delete(self):
+        pid=self.prize()
+        admin=self.admin()
+        payload={'name':'确定实物','type':'physical','amountCents':100,'stock':10,'dailyLimit':10,'weight':1,'enabled':False,'points':0}
+        self.ok(f'/api/admin/prizes/{pid}','POST',payload,admin)
+        boot=self.ok('/api/bootstrap')
+        self.assertNotIn(pid,[p['id'] for p in boot['prizes']])
+        self.ok(f'/api/admin/prizes/{pid}','DELETE',{},admin)
+        self.assertEqual(self.sql('SELECT COUNT(*) n FROM prizes')[0]['n'],0)
+
     def test_admin_prize_inventory_and_draw_records(self):
         self.prize(stock=10)
         user=self.login(); attempt=self.start(user); self.submit(user,attempt)
