@@ -164,17 +164,28 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(self.request('/api/auth/callback?state='+state+'&code=expired',cookie=cookie)[0],403)
             self.assertEqual(remote.call_count,2)
 
-    def test_scoring_policy_snapshot_and_revived_points_exclusion(self):
+    def test_daily_best_includes_failed_and_revived_scores(self):
         self.configure(countFailed=False,countRevived=False)
         user=self.login(); first=self.start(user)
         self.configure(countFailed=True)
         self.submit(user,first,self.answers(first,5,3))
-        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],0)
+        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],76)
         self.ok('/api/revive','POST',{'attemptId':first['id']},user)
         second=self.start(user)
         self.submit(user,second)
-        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],0)
+        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],100)
         self.assertEqual(self.sql('SELECT score FROM attempts ORDER BY created')[1]['score'],100)
+
+    def test_daily_scores_are_summed_across_days(self):
+        user=self.login()
+        first=self.start(user)
+        self.submit(user,first,self.answers(first,5,3))
+        self.sql("UPDATE attempts SET day=date(?, '-1 day') WHERE id=?",(server.day(),first['id']))
+        second=self.start(user)
+        self.submit(user,second)
+        self.assertEqual(self.ok('/api/bootstrap',cookie=user)['account']['points'],176)
+        board=self.ok('/api/leaderboard',cookie=user)
+        self.assertEqual(board['rows'][0]['points'],176)
 
     def test_question_shortage_does_not_create_attempt(self):
         user=self.login()

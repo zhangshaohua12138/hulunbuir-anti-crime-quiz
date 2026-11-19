@@ -76,7 +76,7 @@ async function toggleTest(user: UserRow) {
       <div v-if="loading" class="loading">加载用户…</div>
       <div v-else class="table-scroll">
         <table class="admin-table users-table">
-          <thead><tr><th>昵称</th><th>用户 ID</th><th>关注</th><th>答题</th><th>最高分</th><th>订单</th><th>状态</th><th>操作</th></tr></thead>
+          <thead><tr><th>昵称</th><th>用户 ID</th><th>关注</th><th>答题</th><th>累计积分</th><th>订单</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
             <tr v-for="user in users" :key="user.id">
               <td class="user-nickname">{{ user.nickname }}</td>

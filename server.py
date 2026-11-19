@@ -192,15 +192,17 @@ def init_db():
 def audit(c,action,detail): c.execute('INSERT INTO audit(created,action,detail) VALUES(?,?,?)',(now(),action,dumps(detail)))
 def ranking_rows(c):
     rows=allrows(c,'''WITH submitted AS (
-        SELECT * FROM attempts WHERE status='submitted' AND (passed=1 OR points>0)
-    ), best AS (
-        SELECT p.*, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY points DESC, seconds ASC, submitted ASC) rn
+        SELECT * FROM attempts WHERE status='submitted'
+    ), best_day AS (
+        SELECT p.*, ROW_NUMBER() OVER (PARTITION BY user_id,day ORDER BY score DESC, seconds ASC, submitted ASC) rn
         FROM submitted p
     ), agg AS (
-        SELECT user_id, MIN(submitted) firstPass, MAX(submitted) lastAnswer FROM submitted GROUP BY user_id
+        SELECT user_id, SUM(score) points, SUM(seconds) totalSeconds,
+               MIN(submitted) firstPass, MAX(submitted) lastAnswer
+        FROM best_day WHERE rn=1 GROUP BY user_id
     )
-    SELECT u.id user_id,u.nickname,COALESCE(u.bonus_points,0)+b.points points,b.seconds totalSeconds,a.firstPass,a.lastAnswer
-    FROM users u JOIN best b ON b.user_id=u.id AND b.rn=1 JOIN agg a ON a.user_id=u.id
+    SELECT u.id user_id,u.nickname,COALESCE(u.bonus_points,0)+a.points points,a.totalSeconds,a.firstPass,a.lastAnswer
+    FROM users u JOIN agg a ON a.user_id=u.id
     ORDER BY points DESC,totalSeconds ASC,COALESCE(a.firstPass,1e30) ASC,a.lastAnswer ASC,u.id ASC''')
     previous=None; rank=0
     for i,r in enumerate(rows):
@@ -228,14 +230,17 @@ def effective_daily_budget(cfg):
         days=max(1,(int(epoch(cfg['endAt'])-epoch(cfg['startAt']))+86399)//86400)
         return max(0,int(cfg.get('budgetCents',0))//days)
     return max(0,int(cfg.get('dailyBudgetCents',0)))
+def user_points(c,user_id):
+    daily=c.execute("SELECT COALESCE(SUM(best),0) FROM (SELECT MAX(score) best FROM attempts WHERE user_id=? AND status='submitted' GROUP BY day)",(user_id,)).fetchone()[0]
+    bonus=c.execute('SELECT COALESCE(bonus_points,0) FROM users WHERE id=?',(user_id,)).fetchone()
+    return int(daily or 0)+int(bonus[0] if bonus else 0)
+
 def account(c,user,cfg):
     if is_test_user(user):
-        points=c.execute("SELECT COALESCE(MAX(points),0)+COALESCE((SELECT bonus_points FROM users WHERE id=?),0) FROM attempts WHERE user_id=? AND status='submitted'",(user['id'],user['id'])).fetchone()[0]
-        return dict(freeRemaining=999,reviveRemaining=999,canRevive=True,points=points)
+        return dict(freeRemaining=999,reviveRemaining=999,canRevive=True,points=user_points(c,user['id']))
     records=allrows(c,"SELECT * FROM attempts WHERE user_id=? AND day=? AND status='submitted'",(user['id'],day()))
     grants=c.execute('SELECT COUNT(*) FROM revives WHERE user_id=? AND day=?',(user['id'],day())).fetchone()[0]
-    points=c.execute("SELECT COALESCE(MAX(points),0)+COALESCE((SELECT bonus_points FROM users WHERE id=?),0) FROM attempts WHERE user_id=? AND status='submitted'",(user['id'],user['id'])).fetchone()[0]
-    return dict(freeRemaining=max(0,cfg['dailyFree']-sum(not r['revived'] for r in records)),reviveRemaining=max(0,grants-sum(bool(r['revived']) for r in records)),canRevive=grants<cfg['reviveLimit'] and any(not r['passed'] for r in records),points=points)
+    return dict(freeRemaining=max(0,cfg['dailyFree']-sum(not r['revived'] for r in records)),reviveRemaining=max(0,grants-sum(bool(r['revived']) for r in records)),canRevive=grants<cfg['reviveLimit'] and any(not r['passed'] for r in records),points=user_points(c,user['id']))
 
 def draw_info(c,a):
     d=one(c,'SELECT * FROM draws WHERE attempt_id=?',(a['id'],))
@@ -769,7 +774,7 @@ class Handler(BaseHTTPRequestHandler):
             pages=max(1,(total+per-1)//per); page=min(page,pages)
             rows=allrows(c,f'''SELECT u.id,u.nickname,u.avatar,u.followed,u.is_test,u.blocked,u.created,
                 (SELECT COUNT(*) FROM attempts a WHERE a.user_id=u.id AND a.status='submitted') attempts,
-                (SELECT COALESCE(MAX(a.points),0) FROM attempts a WHERE a.user_id=u.id AND a.status='submitted') best,
+                (SELECT COALESCE(SUM(best),0) FROM (SELECT MAX(a.score) best FROM attempts a WHERE a.user_id=u.id AND a.status='submitted' GROUP BY a.day)) best,
                 (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) orders
                 FROM users u {where} ORDER BY u.created DESC LIMIT ? OFFSET ?''',args+(per,(page-1)*per))
             for r in rows:
@@ -1012,6 +1017,8 @@ class Handler(BaseHTTPRequestHandler):
                 if search: rows=[r for r in rows if search in r['openid'] or search in r['id'] or search in r.get('recipient','')]
             for r in rows:
                 for k in ['questions','answers','policy']: r.pop(k,None)
+                if r.get('created'): r['createdAt']=iso(r['created'])
+                if r.get('submitted'): r['submittedAt']=iso(r['submitted'])
                 if 'recipient' in r:
                     rec=json.loads(r['recipient']); r['recipient']=rec
                     for key,val in rec.items(): r[key]=val

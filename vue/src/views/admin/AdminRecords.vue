@@ -40,7 +40,8 @@ const columns = computed<Column[]>(() => {
     { key: 'passed', label: '是否达标' },
     { key: 'status', label: '答题状态' },
     { key: 'totalSeconds', label: '用时' },
-    { key: 'createdAt', label: '创建时间' },
+    { key: 'day', label: '答题日期' },
+    { key: 'submittedAt', label: '提交时间' },
   ]
   return [
     { key: 'nickname', label: '用户' },
@@ -114,7 +115,7 @@ function display(key: string, value: unknown) {
     const recipient = value as Record<string, string>
     return [recipient.name, recipient.phone, recipient.address || recipient.pickup].filter(Boolean).join(' / ') || '—'
   }
-  if (key === 'createdAt') {
+  if (key === 'createdAt' || key === 'submittedAt') {
     const text = String(value).replace('T', ' ')
     return text.slice(0, 16)
   }
