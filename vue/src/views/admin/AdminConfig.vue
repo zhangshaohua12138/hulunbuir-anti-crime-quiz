@@ -70,8 +70,8 @@ function applyTextDefaults(value: Record<string, any>) {
   for (const group of copyGroups) {
     for (const field of group.fields) {
       if (field.top) {
-        if (field.key !== 'rulesText' && !String(value[field.key] || '').trim()) value[field.key] = topDefaults[field.key] || ''
-      } else if (!String(value.copy[field.key] || '').trim()) {
+        if (field.key !== 'rulesText' && value[field.key] == null) value[field.key] = topDefaults[field.key] || ''
+      } else if (value.copy[field.key] == null) {
         value.copy[field.key] = copyDefaults[field.key] || ''
       }
     }
@@ -330,8 +330,8 @@ async function save() {
               <label v-for="field in group.fields" :key="field.key" :class="{ wide: field.textarea }">
                 {{ field.label }}
                 <textarea v-if="field.textarea" v-model="config[field.key]" rows="3" placeholder="留空使用默认规则" />
-                <input v-else-if="field.top" v-model="config[field.key]" placeholder="留空使用默认" />
-                <input v-else v-model="config.copy[field.key]" placeholder="留空使用默认" />
+                <input v-else-if="field.top" v-model="config[field.key]" placeholder="留空则不显示" />
+                <input v-else v-model="config.copy[field.key]" placeholder="留空则不显示" />
               </label>
             </div>
           </div>
