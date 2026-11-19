@@ -14,6 +14,69 @@ const startLocal = ref('')
 const endLocal = ref('')
 
 interface CopyField { key: string; label: string; placeholder?: string; top?: boolean; textarea?: boolean }
+const copyDefaults: Record<string, string> = {
+  loginTitle: '登录演示账号',
+  resultEyebrow: '本次成绩',
+  resultExpiredEyebrow: '本次答题已过期',
+  resultPassTitle: '答题达标，收获满满！',
+  resultFailTitle: '再接再厉，平安知识多一分',
+  resultExpiredTitle: '本次答题已过期',
+  resultPassTip: '达到合格分数后即可参与抽奖。',
+  resultDrawnTip: '已抽奖，感谢参与。',
+  resultFailTip: '学习的每一步都有意义，再来一次巩固知识吧。',
+  resultExpiredTip: '本次状态及机会归还以服务器记录为准。',
+  resultRankingButton: '查看积分榜',
+  resultHomeButton: '返回首页',
+  lotteryEyebrow: '答题有礼',
+  lotteryTitle: '答题有礼，好运开启',
+  rankingEyebrow: '共同进步',
+  rankingTitle: '每一分努力，都值得被看见',
+  rankingIntro: '榜单更新中，活动结束后冻结最终排名',
+  rankingEmpty: '还没有上榜记录，快来开启你的知识之旅。',
+  rankingHelp: '每日取最高分，跨天累加；同一天多套只计最高分，不重复累计；抽奖积分另行累加。',
+  winnersEyebrow: '荣誉榜单',
+  winnersTitle: '获奖名单公示',
+  winnersIntro: '榜单已封存，排名以最终公示为准',
+  awardsEyebrow: '我的奖品',
+  awardsTitle: '我的奖品',
+  awardsIntro: '记录每一份收获，也感谢你的每一次参与。',
+  awardsEmpty: '暂无中奖记录。完成答题并达标后，可参与好礼抽取。',
+  quizSingle: '单选题',
+  quizMulti: '多选题',
+  quizNext: '下一题 →',
+  quizSubmit: '完成答题，交卷',
+  quizHelpSingle: '单选题：只能选 1 项，选对得 8 分。',
+  quizHelpMulti: '多选题：至少选 2 项，全部选对才得分；漏选、错选均不得分。',
+}
+
+const topDefaults: Record<string, string> = {
+  title: '呼伦贝尔市深化扫黑除恶专项斗争有奖竞答活动',
+  brandSubtitle: '全民参与 · 共建平安',
+  shareDesc: '学到知识，守护平安家园',
+  homeEyebrow: '深化扫黑除恶 · 共建平安家园',
+  homeIntro: '让法治精神深入人心，让平安建设与你同行。',
+  homeMeta: '全民参与 · 共护平安',
+  homeCardTitle: '今天，也为平安加一分',
+  homeCta: '开始答题，赢取好礼',
+  homeGiftTitle: '知识有力量，参与有惊喜',
+  footerText: '学法知法 · 守护平安 · 共建美好家园',
+  rulesIntro: '开始前花一分钟，了解这场知识之旅。',
+  loginTip: '此账号仅用于本地体验，不会连接微信或发放真实奖品。',
+}
+
+function applyTextDefaults(value: Record<string, any>) {
+  if (!value.copy) value.copy = {}
+  for (const group of copyGroups) {
+    for (const field of group.fields) {
+      if (field.top) {
+        if (field.key !== 'rulesText' && !String(value[field.key] || '').trim()) value[field.key] = topDefaults[field.key] || ''
+      } else if (!String(value.copy[field.key] || '').trim()) {
+        value.copy[field.key] = copyDefaults[field.key] || ''
+      }
+    }
+  }
+}
+
 const copyGroups: Array<{ title: string; fields: CopyField[] }> = [
   {
     title: '首页与通用',
@@ -124,12 +187,7 @@ const dailyYuan = computed(() => ((Number(config.value?.dailyBudgetCents || 0)) 
 onMounted(async () => {
   try {
     config.value = await api<Record<string, any>>('/api/admin/config')
-    if (!config.value.copy) config.value.copy = {}
-    for (const group of copyGroups) {
-      for (const field of group.fields) {
-        if (!field.top && config.value.copy[field.key] === undefined) config.value.copy[field.key] = ''
-      }
-    }
+    applyTextDefaults(config.value)
     startLocal.value = toLocalInput(String(config.value.startAt || ''))
     endLocal.value = toLocalInput(String(config.value.endAt || ''))
   } catch (reason) {
@@ -150,6 +208,7 @@ async function save() {
       method: 'PUT',
       body: JSON.stringify(config.value),
     })
+    applyTextDefaults(config.value)
     startLocal.value = toLocalInput(String(config.value.startAt || ''))
     endLocal.value = toLocalInput(String(config.value.endAt || ''))
     message.value = '活动配置已保存'
