@@ -1,0 +1,12 @@
+[Unit]
+Description=Hulunbuir quiz daily report email
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=quiz
+Group=quiz
+EnvironmentFile=/etc/hulunbuir-quiz-report.env
+Environment=DATABASE_PATH=/var/lib/hulunbuir-quiz/quiz.db
+WorkingDirectory=/opt/hulunbuir-quiz
+ExecStart=/opt/hulunbuir-quiz/.venv/bin/python /opt/hulunbuir-quiz/scripts/daily_report.py
