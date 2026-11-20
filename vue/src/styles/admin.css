@@ -296,16 +296,19 @@
 .modal-close { border: 0; background: transparent; color: var(--muted); font-size: 22px; line-height: 1; padding: 0 2px; }
 
 /* User management table alignment */
-.users-table { table-layout: fixed; min-width: 760px; }
+.users-table { table-layout: fixed; min-width: 980px; }
 .users-table th, .users-table td { vertical-align: middle; white-space: nowrap; }
-.users-table th:nth-child(1) { width: 20%; }
-.users-table th:nth-child(2) { width: 22%; }
-.users-table th:nth-child(3) { width: 9%; }
-.users-table th:nth-child(4) { width: 9%; }
-.users-table th:nth-child(5) { width: 9%; }
-.users-table th:nth-child(6) { width: 8%; }
-.users-table th:nth-child(7) { width: 11%; }
-.users-table th:nth-child(8) { width: 12%; }
+.users-table th:nth-child(1) { width: 14%; }
+.users-table th:nth-child(2) { width: 15%; }
+.users-table th:nth-child(3) { width: 20%; }
+.users-table th:nth-child(4) { width: 8%; }
+.users-table th:nth-child(5) { width: 7%; }
+.users-table th:nth-child(6) { width: 9%; }
+.users-table th:nth-child(7) { width: 7%; }
+.users-table th:nth-child(8) { width: 10%; }
+.users-table th:nth-child(9) { width: 10%; }
+.user-openid { overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 10px; cursor: pointer; }
+.user-openid:hover { color: var(--primary-dark); text-decoration: underline; }
 .user-nickname { overflow: hidden; text-overflow: ellipsis; }
 .user-id { overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 10px; }
 .users-table .row-actions { flex-wrap: nowrap; white-space: nowrap; }

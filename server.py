@@ -803,11 +803,11 @@ class Handler(BaseHTTPRequestHandler):
             try: per=int(query.get('pageSize',['20'])[0])
             except Exception: per=20
             if per not in [10,20,50]: per=20
-            where='WHERE (?="" OR u.nickname LIKE ? OR u.id LIKE ?)' if q else ''
-            args=('',f'%{q}%',f'%{q}%') if q else ()
+            where='WHERE (?="" OR u.nickname LIKE ? OR u.id LIKE ? OR u.openid LIKE ?)' if q else ''
+            args=('',f'%{q}%',f'%{q}%',f'%{q}%') if q else ()
             total=c.execute(f'SELECT COUNT(*) FROM users u {where}',args).fetchone()[0]
             pages=max(1,(total+per-1)//per); page=min(page,pages)
-            rows=allrows(c,f'''SELECT u.id,u.nickname,u.avatar,u.followed,u.is_test,u.blocked,u.created,
+            rows=allrows(c,f'''SELECT u.id,u.openid,u.nickname,u.avatar,u.followed,u.is_test,u.blocked,u.created,
                 (SELECT COUNT(*) FROM attempts a WHERE a.user_id=u.id AND a.status='submitted') attempts,
                 (SELECT COALESCE(SUM(best),0) FROM (SELECT MAX(a.score) best FROM attempts a WHERE a.user_id=u.id AND a.status='submitted' GROUP BY a.day)) best,
                 (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) orders

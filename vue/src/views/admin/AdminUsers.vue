@@ -7,6 +7,7 @@ import { api } from '../../api'
 
 interface UserRow {
   id: string
+  openid?: string
   nickname: string
   followed: number
   is_test: number
@@ -44,6 +45,16 @@ async function load() {
   }
 }
 
+async function copyOpenid(user: UserRow) {
+  if (!user.openid) return
+  try {
+    await navigator.clipboard.writeText(user.openid)
+    message.value = 'openid 已复制'
+  } catch {
+    message.value = user.openid
+  }
+}
+
 function openRecords(user: UserRow, kind: 'attempts' | 'orders') {
   void router.push({ path: '/admin/records', query: { kind, userId: user.id, userName: user.nickname } })
 }
@@ -69,18 +80,19 @@ async function toggleTest(user: UserRow) {
     <p v-if="message" class="notice-bar">{{ message }}</p>
     <section class="card">
       <div class="toolbar">
-        <input v-model="search" placeholder="搜索昵称 / 用户 ID" @keyup.enter="page = 1; load()" />
+        <input v-model="search" placeholder="搜索昵称 / 用户 ID / openid" @keyup.enter="page = 1; load()" />
         <button class="btn small secondary" type="button" @click="page = 1; load()">搜索</button>
         <span class="spacer" /><span class="help">共 {{ total }} 人</span>
       </div>
       <div v-if="loading" class="loading">加载用户…</div>
       <div v-else class="table-scroll">
         <table class="admin-table users-table">
-          <thead><tr><th>昵称</th><th>用户 ID</th><th>关注</th><th>答题</th><th>累计积分</th><th>订单</th><th>状态</th><th>操作</th></tr></thead>
+          <thead><tr><th>昵称</th><th>用户 ID</th><th>openid</th><th>关注</th><th>答题</th><th>累计积分</th><th>订单</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
             <tr v-for="user in users" :key="user.id">
               <td class="user-nickname">{{ user.nickname }}</td>
               <td class="user-id" :title="user.id">{{ user.id.slice(0, 12) }}…</td>
+              <td class="user-openid" :title="user.openid || ''" @click="copyOpenid(user)">{{ (user.openid || '—').slice(0, 14) }}{{ user.openid && user.openid.length > 14 ? '…' : '' }}</td>
               <td>{{ user.followed ? '已关注' : '未关注' }}</td>
               <td><button class="count-link" type="button" @click="openRecords(user, 'attempts')">{{ user.attempts }}</button></td>
               <td>{{ user.best }}</td>
