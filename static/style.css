@@ -19,3 +19,13 @@
 .review-letter { flex: none; font-weight: 700; }
 .review-answer { margin: 10px 0 0; font-size: 12px; line-height: 1.8; color: var(--muted); }
 
+
+/* 单题即时反馈 */
+.option:disabled { opacity: 1; cursor: default; }
+.option.correct-option { border-color: #8bc9a9; background: #edf8f1; color: #286548; }
+.option.wrong-option { border-color: #e8aaa4; background: #fff3f1; color: #a33a30; }
+.answer-feedback { margin-top: 14px; padding: 11px 13px; border-radius: 8px; font-size: 13px; line-height: 1.7; }
+.answer-feedback.ok { background: #edf8f1; color: #286548; border: 1px solid #bce4cf; }
+.answer-feedback.bad { background: #fff3f1; color: #a33a30; border: 1px solid #f0b9b4; }
+.answer-feedback p { margin: 4px 0 0; }
+

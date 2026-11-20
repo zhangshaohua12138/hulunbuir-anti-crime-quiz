@@ -653,6 +653,21 @@ class Handler(BaseHTTPRequestHandler):
             stamp=now(); aid=uid(); deadline=min(stamp+(cfg['timeLimitSeconds'] or cfg['resumeSeconds']),epoch(cfg['endAt']))
             c.execute('INSERT INTO attempts(id,user_id,day,revived,status,created,deadline,expires,questions,ip,policy) VALUES(?,?,?,?,?,?,?,?,?,?,?)',(aid,u['id'],day(),int(revived),'active',stamp,deadline,deadline,dumps(qs),self.client_address[0],dumps(cfg)))
             return public_attempt(one(c,'SELECT * FROM attempts WHERE id=?',(aid,)),cfg)
+        cm=re.fullmatch(r'/api/attempts/([a-f0-9]+)/check',path)
+        if cm and method=='POST':
+            a=one(c,'SELECT * FROM attempts WHERE id=? AND user_id=?',(cm[1],u['id']))
+            if not a or a['status']!='active': raise Error('当前题目已结束，不能继续核对')
+            self.require_active(c,cfg,u)
+            qid=str(data.get('questionId',''))
+            q=next((item for item in json.loads(a['questions']) if item['id']==qid),None)
+            if not q: raise Error('题目不存在',404)
+            selected=[str(x) for x in (data.get('answers') or []) if isinstance(x,(str,int))]
+            valid={str(o['id']) for o in q.get('options',[])}
+            if not selected: raise Error('请先选择答案')
+            if any(x not in valid for x in selected): raise Error('答案选项无效')
+            if q['type']=='single' and len(selected)!=1: raise Error('单选题只能选择一个答案')
+            correct=set(str(x) for x in q.get('answers',[]))
+            return {'correct':set(selected)==correct,'correctAnswers':sorted(correct),'explanation':q.get('explanation','')}
         m=re.fullmatch(r'/api/attempts/([a-f0-9]+)(/answers|/submit)?',path)
         if m:
             a=one(c,'SELECT * FROM attempts WHERE id=? AND user_id=?',(m[1],u['id']))

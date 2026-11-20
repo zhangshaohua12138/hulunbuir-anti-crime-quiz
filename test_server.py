@@ -369,6 +369,19 @@ class ServerTests(unittest.TestCase):
         self.assertEqual((result['status'],result['score']),('submitted',80))
         self.assertEqual(self.submit(user,attempt,self.answers(attempt))['score'],80)
 
+    def test_check_answer_returns_correct_answer_after_selection(self):
+        user=self.login()
+        attempt=self.start(user)
+        correct=self.answers(attempt)
+        qid=attempt['questions'][0]['id']
+        qnext=next(q for q in attempt['questions'] if q['id']==qid)
+        wrong=next(o['id'] for o in qnext['options'] if o['id'] not in correct[qid])
+        checked=self.ok('/api/attempts/'+attempt['id']+'/check','POST',{'questionId':qid,'answers':[wrong]},user)
+        self.assertFalse(checked['correct'])
+        self.assertEqual(set(checked['correctAnswers']),set(correct[qid]))
+        again=self.ok('/api/attempts/'+attempt['id']+'/check','POST',{'questionId':qid,'answers':correct[qid]},user)
+        self.assertTrue(again['correct'])
+
     def test_submitted_attempt_includes_answer_review(self):
         user=self.login()
         attempt=self.start(user)
