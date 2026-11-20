@@ -52,6 +52,7 @@ const copyDefaults: Record<string, string> = {
 
 const topDefaults: Record<string, string> = {
   title: '呼伦贝尔市深化扫黑除恶专项斗争有奖竞答活动',
+  organizer: '中共呼伦贝尔市委政法委员会',
   brandSubtitle: '全民参与 · 共建平安',
   shareTitle: '呼伦贝尔市深化扫黑除恶专项斗争有奖竞答活动',
   shareDesc: '学到知识，守护平安家园',
@@ -84,6 +85,7 @@ const copyGroups: Array<{ title: string; fields: CopyField[] }> = [
     title: '首页与通用',
     fields: [
       { key: 'title', label: '活动名称（左上角标题）', top: true },
+      { key: 'organizer', label: '主办单位（规则页展示）', top: true },
       { key: 'brandSubtitle', label: '品牌副标题', top: true },
       { key: 'homeEyebrow', label: '首页眉题', top: true },
       { key: 'homeIntro', label: '首页主说明', top: true },
