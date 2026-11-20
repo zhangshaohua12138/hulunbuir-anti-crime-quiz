@@ -357,6 +357,20 @@ def wx_token(c):
     x=remote_json('https://api.weixin.qq.com/cgi-bin/token?'+q)
     if 'access_token' not in x: raise Error('公众号凭据不可用',503)
     WX_CACHE.update(token=x['access_token'],expires=now()+x.get('expires_in',7200)-300); return x['access_token']
+TICKET_CACHE={}
+def wx_ticket(c):
+    i=integrations(c)
+    appid=i['wechatAppId']
+    if TICKET_CACHE.get('appid')!=appid: TICKET_CACHE.clear(); TICKET_CACHE['appid']=appid
+    if TICKET_CACHE.get('expires',0)>now(): return TICKET_CACHE['ticket']
+    x=remote_json('https://api.weixin.qq.com/cgi-bin/ticket/getticket?'+urllib.parse.urlencode(dict(access_token=wx_token(c),type='jsapi')))
+    ticket=x.get('ticket')
+    if not ticket:
+        print('getticket error:',dumps(x),flush=True)
+        raise Error('获取微信分享配置失败：'+str(x.get('errmsg') or x.get('errcode') or '未知错误'),503)
+    TICKET_CACHE.update(ticket=ticket,expires=now()+int(x.get('expires_in',7200))-300)
+    return ticket
+
 def wx_follow(c,openid):
     x=remote_json('https://api.weixin.qq.com/cgi-bin/user/info?'+urllib.parse.urlencode(dict(access_token=wx_token(c),openid=openid,lang='zh_CN')))
     if 'subscribe' not in x: raise Error('暂时无法验证关注状态',503)
@@ -723,8 +737,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/share/config':
             url=query.get('url',[''])[0].split('#')[0]
             if not url.startswith(os.getenv('PUBLIC_URL','https://invalid')+'/'): raise Error('分享地址无效')
-            ticket=remote_json('https://api.weixin.qq.com/cgi-bin/ticket/getticket?'+urllib.parse.urlencode(dict(access_token=wx_token(c),type='jsapi'))).get('ticket')
-            if not ticket: raise Error('获取微信分享配置失败',503)
+            ticket=wx_ticket(c)
             nonce=uid(); stamp=int(now()); signature=hashlib.sha1(f'jsapi_ticket={ticket}&noncestr={nonce}&timestamp={stamp}&url={url}'.encode()).hexdigest()
             return dict(appId=integrations(c)['wechatAppId'],timestamp=stamp,nonceStr=nonce,signature=signature,imgUrl=os.getenv('PUBLIC_URL','').rstrip('/')+'/static/share-cover-v2.jpg')
         raise Error('接口不存在',404)
