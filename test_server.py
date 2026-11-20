@@ -759,7 +759,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(data['total'],1)
         row=data['rows'][0]
         self.assertEqual((row['nickname'],row['attempts'],row['best']),('UserA',1,100))
-        self.assertNotIn('openid',row)
+        self.assertTrue(row['openid'].startswith('demo-'))
         self.assertEqual(self.request('/api/admin/users',cookie=user)[0],401)
 
     def test_admin_questions_are_paginated(self):
