@@ -434,6 +434,23 @@ class ServerTests(unittest.TestCase):
         self.ok('/api/admin/orders/'+order['id'],'PUT',{'status':'granted'},admin)
         self.assertEqual(self.sql('SELECT status FROM orders WHERE id=?',(order['id'],))[0]['status'],'granted')
 
+    def test_phone_award_tiers_follow_rank_bands(self):
+        admin=self.admin()
+        self.configure(endAt=server.iso(self.clock-1))
+        rows=[]
+        for rank in [1,10,11,30,31,50,51]:
+            user_id=server.uid()
+            self.sql('INSERT INTO users(id,openid,nickname,created) VALUES(?,?,?,?)',(user_id,'tier-'+user_id,'tier',self.clock))
+            rows.append(dict(user_id=user_id,nickname='tier',points=100-rank,totalSeconds=rank,firstPass=self.clock,lastPass=self.clock,rank=rank))
+        with patch.object(server,'ranking_rows',return_value=rows):
+            self.ok('/api/admin/freeze','POST',{},admin)
+        saved={r['prize_name']:0 for r in self.sql("SELECT * FROM orders WHERE source='ranking'")}
+        amounts=[r['prize_name'] for r in self.sql("SELECT * FROM orders WHERE source='ranking' ORDER BY rowid")]
+        self.assertEqual(len(amounts),6)
+        self.assertEqual(amounts.count('话费奖励 300 元'),2)
+        self.assertEqual(amounts.count('话费奖励 150 元'),2)
+        self.assertEqual(amounts.count('话费奖励 100 元'),2)
+
     def test_winning_draw_concurrent_idempotence(self):
         self.prize(stock=1)
         user=self.login(); attempt=self.start(user); self.submit(user,attempt)
