@@ -276,6 +276,8 @@ async function save() {
           <label>整卷限时（秒）<input v-model.number="config.timeLimitSeconds" type="number" min="60" /><small class="help">每题限时 {{ Math.max(1, Math.floor(Number(config.timeLimitSeconds || 0) / 10)) }} 秒（整卷 ÷ 10 题）</small></label>
           <label>排行榜展示条数<input v-model.number="config.leaderboardLimit" type="number" min="1" /></label>
           <label>获奖人数<input v-model.number="config.winnerCount" type="number" min="1" /></label>
+          <label>题目去重窗口（天，0 为不去重）<input v-model.number="config.dedupDays" type="number" min="0" /></label>
+          <label class="switch-row wide"><input v-model="config.shuffleOptions" type="checkbox" />随机打乱选项顺序</label>
         </div>
         <div class="card-foot"><span>单选 5 题 · 多选 5 题</span><span>满分 100 分</span></div>
       </section>
@@ -289,6 +291,8 @@ async function save() {
         <div class="card-fields">
           <label>总红包预算（分）<input v-model.number="config.budgetCents" type="number" min="0" /></label>
           <label>每日红包预算（分）<input v-model.number="config.dailyBudgetCents" type="number" min="0" /></label>
+          <label>单用户每日中奖上限<input v-model.number="config.dailyWinLimit" type="number" min="0" /></label>
+          <label>单用户全程中奖上限<input v-model.number="config.totalWinLimit" type="number" min="0" /></label>
           <label class="switch-row wide"><input v-model="config.budgetAutoDaily" type="checkbox" />每日预算按总预算 / 活动天数自动计算</label>
         </div>
         <div class="card-foot"><span>约 ¥{{ budgetYuan }}</span><span>每日约 ¥{{ dailyYuan }}</span></div>
