@@ -250,7 +250,14 @@ def draw_info(c,a):
 
 def public_attempt(a,cfg,draw=None):
     q=json.loads(a['questions']); result=dict(id=a['id'],questions=[{k:v for k,v in x.items() if k in ('id','type','stem','options')} for x in q],answers=json.loads(a['answers']),deadlineAt=iso(min(a['deadline'],a['expires'])),status=a['status'],score=a['score'],passed=bool(a['passed']),revived=bool(a['revived']),drawn=bool(draw),lottery=draw)
-    if a['status']=='submitted' and cfg['showAnswers']: result['analysis']=q
+    if a['status']=='submitted':
+        selected=json.loads(a['answers']); review=[]
+        for item in q:
+            picked=selected.get(item['id'],[]) or []
+            correct=item.get('answers',[]) or []
+            review.append(dict(id=item['id'],type=item['type'],stem=item['stem'],options=item.get('options',[]),selected=picked,correct=correct,corrected=bool(picked) and set(picked)==set(correct)))
+        result['review']=review
+        if cfg['showAnswers']: result['analysis']=q
     return result
 
 def validate_answers(a,answers):

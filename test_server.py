@@ -369,6 +369,16 @@ class ServerTests(unittest.TestCase):
         self.assertEqual((result['status'],result['score']),('submitted',80))
         self.assertEqual(self.submit(user,attempt,self.answers(attempt))['score'],80)
 
+    def test_submitted_attempt_includes_answer_review(self):
+        user=self.login()
+        attempt=self.start(user)
+        self.assertNotIn('review',self.ok('/api/attempts/'+attempt['id'],cookie=user))
+        self.submit(user,attempt,self.answers(attempt,4,3))
+        detail=self.ok('/api/attempts/'+attempt['id'],cookie=user)
+        self.assertEqual(len(detail['review']),10)
+        self.assertEqual(sum(1 for q in detail['review'] if q['corrected']),7)
+        self.assertTrue(all(q['correct'] for q in detail['review']))
+
     def test_below_pass_scores_join_ranking(self):
         user=self.login()
         first=self.start(user)
