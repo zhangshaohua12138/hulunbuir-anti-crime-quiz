@@ -809,7 +809,7 @@ class Handler(BaseHTTPRequestHandler):
             pages=max(1,(total+per-1)//per); page=min(page,pages)
             rows=allrows(c,f'''SELECT u.id,u.openid,u.nickname,u.avatar,u.followed,u.is_test,u.blocked,u.created,
                 (SELECT COUNT(*) FROM attempts a WHERE a.user_id=u.id AND a.status='submitted') attempts,
-                (SELECT COALESCE(SUM(best),0) FROM (SELECT MAX(a.score) best FROM attempts a WHERE a.user_id=u.id AND a.status='submitted' GROUP BY a.day)) best,
+                (SELECT COALESCE(SUM(best),0) FROM (SELECT MAX(a.score) best FROM attempts a WHERE a.user_id=u.id AND a.status='submitted' GROUP BY a.day)) + COALESCE(u.bonus_points,0) best,
                 (SELECT COUNT(*) FROM orders o WHERE o.user_id=u.id) orders
                 FROM users u {where} ORDER BY u.created DESC LIMIT ? OFFSET ?''',args+(per,(page-1)*per))
             for r in rows:

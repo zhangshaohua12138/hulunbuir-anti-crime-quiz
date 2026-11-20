@@ -15,6 +15,7 @@ const nav = computed(() =>
     { key: 'prizes', to: '/admin/prizes', label: '奖品管理', icon: '奖' },
     { key: 'users', to: '/admin/users', label: '用户管理', icon: '用' },
     { key: 'records', to: '/admin/records', label: '记录与发奖', icon: '录' },
+    { key: 'leaderboard', to: '/admin/leaderboard', label: '排行榜', icon: '榜' },
     ...(isSuper.value
       ? [
           { key: 'accounts', to: '/admin/accounts', label: '账号管理', icon: '账' },
