@@ -271,7 +271,7 @@ async function save() {
           <label>每日免费次数<input v-model.number="config.dailyFree" type="number" min="1" /></label>
           <label>每日复活上限<input v-model.number="config.reviveLimit" type="number" min="0" /></label>
           <label>抽奖达标分数<input v-model.number="config.passScore" type="number" min="1" max="100" /></label>
-          <label>整卷限时（秒）<input v-model.number="config.timeLimitSeconds" type="number" min="60" /></label>
+          <label>整卷限时（秒）<input v-model.number="config.timeLimitSeconds" type="number" min="60" /><small class="help">每题限时 {{ Math.max(1, Math.floor(Number(config.timeLimitSeconds || 0) / 10)) }} 秒（整卷 ÷ 10 题）</small></label>
           <label>排行榜展示条数<input v-model.number="config.leaderboardLimit" type="number" min="1" /></label>
           <label>获奖人数<input v-model.number="config.winnerCount" type="number" min="1" /></label>
         </div>
